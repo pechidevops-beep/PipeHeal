@@ -1,11 +1,16 @@
 import { Queue } from 'bullmq';
+import Redis from 'ioredis';
 import logger from '../utils/logger.js';
 
-// Setup Redis connection options
-export const redisConnection = {
-  host: process.env.REDIS_HOST || '127.0.0.1',
-  port: parseInt(process.env.REDIS_PORT || '6379', 10),
-};
+// Setup Redis connection
+export const redisConnection = process.env.REDIS_URL
+  ? new Redis(process.env.REDIS_URL, { maxRetriesPerRequest: null })
+  : new Redis({
+      host: process.env.REDIS_HOST || '127.0.0.1',
+      port: parseInt(process.env.REDIS_PORT || '6379', 10),
+      password: process.env.REDIS_PASSWORD || undefined,
+      maxRetriesPerRequest: null
+    });
 
 // Create the Auto-Fix Queue
 export const autoFixQueue = new Queue('AutoFixQueue', {
