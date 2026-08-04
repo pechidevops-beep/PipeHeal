@@ -28,8 +28,3 @@ services:
         sync: false
       - key: GEMINI_API_KEY
         sync: false
-
-  - type: redis
-    name: pipeheal-redis
-    ipAllowList: [] # only allow internal connections
-    plan: free
