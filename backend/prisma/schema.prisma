@@ -1,0 +1,323 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ─────────────────────────────────────────────
+// USER
+// ─────────────────────────────────────────────
+model User {
+  id            String   @id @default(cuid())
+  githubId      String   @unique
+  login         String   @unique
+  name          String?
+  email         String?  @unique
+  avatarUrl     String?
+  accessToken   String?  // encrypted GitHub OAuth token
+  role          Role     @default(USER)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  repositories  Repository[]
+  activities    Activity[]
+
+  @@map("users")
+}
+
+// ─────────────────────────────────────────────
+// REPOSITORY
+// ─────────────────────────────────────────────
+model Repository {
+  id            String   @id @default(cuid())
+  githubId      BigInt   @unique
+  owner         String
+  name          String
+  fullName      String   @unique
+  description   String?
+  private       Boolean  @default(false)
+  defaultBranch String   @default("main")
+  language      String?
+  webhookId     BigInt?
+  webhookActive Boolean  @default(false)
+  autoFixEnabled Boolean @default(false)
+  userId        String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  user          User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  workflowRuns  WorkflowRun[]
+  incidents     Incident[]
+  knowledgeBases KnowledgeBase[]
+
+  @@map("repositories")
+}
+
+// ─────────────────────────────────────────────
+// WORKFLOW RUN
+// ─────────────────────────────────────────────
+model WorkflowRun {
+  id              String          @id @default(cuid())
+  githubRunId     BigInt          @unique
+  workflowId      BigInt
+  workflowName    String
+  headBranch      String
+  headSha         String
+  event           String
+  status          WorkflowStatus
+  conclusion      String?
+  htmlUrl         String?
+  logsUrl         String?
+  rawLogs         String?         // downloaded logs
+  parsedMetadata  Json?           // parsed metadata separately
+  repositoryId    String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  repository      Repository      @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  steps           PipelineStep[]
+  incidents       Incident[]
+  activities      Activity[]
+
+  @@map("workflow_runs")
+}
+
+// ─────────────────────────────────────────────
+// PIPELINE STEP
+// ─────────────────────────────────────────────
+model PipelineStep {
+  id            String       @id @default(cuid())
+  githubStepId  BigInt
+  jobId         BigInt
+  jobName       String
+  stepName      String
+  status        StepStatus
+  conclusion    String?
+  number        Int
+  startedAt     DateTime?
+  completedAt   DateTime?
+  workflowRunId String
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+
+  workflowRun   WorkflowRun  @relation(fields: [workflowRunId], references: [id], onDelete: Cascade)
+
+  @@map("pipeline_steps")
+}
+
+// ─────────────────────────────────────────────
+// INCIDENT
+// ─────────────────────────────────────────────
+model Incident {
+  id              String          @id @default(cuid())
+  title           String
+  description     String?
+  severity        Severity        @default(HIGH)
+  status          IncidentStatus  @default(OPEN)
+  errorCategory   String?
+  errorMessage    String?
+  errorFile       String?
+  errorLine       Int?
+  errorCommand    String?
+  repositoryId    String
+  workflowRunId   String?
+  resolvedAt      DateTime?
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  repository      Repository      @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  workflowRun     WorkflowRun?    @relation(fields: [workflowRunId], references: [id])
+  diagnoses       Diagnosis[]
+  patches         Patch[]
+  sandboxRuns     SandboxRun[]
+  pullRequests    PullRequest[]
+  activities      Activity[]
+
+  @@map("incidents")
+}
+
+// ─────────────────────────────────────────────
+// DIAGNOSIS
+// ─────────────────────────────────────────────
+model Diagnosis {
+  id              String   @id @default(cuid())
+  rootCause       String
+  summary         String
+  failureType     String?
+  suggestedFix    String?
+  autoFixable     Boolean  @default(false)
+  confidence      Float    @default(0.0)
+  aiModel         String   @default("placeholder")
+  rawResponse     Json?
+  incidentId      String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  incident        Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@map("diagnoses")
+}
+
+// ─────────────────────────────────────────────
+// PATCH
+// ─────────────────────────────────────────────
+model Patch {
+  id              String      @id @default(cuid())
+  filePath        String
+  originalCode    String
+  patchedCode     String
+  diff            String?
+  description     String?
+  aiModel         String      @default("placeholder")
+  status          PatchStatus @default(PENDING)
+  incidentId      String
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+
+  incident        Incident    @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@map("patches")
+}
+
+// ─────────────────────────────────────────────
+// SANDBOX RUN
+// ─────────────────────────────────────────────
+model SandboxRun {
+  id              String          @id @default(cuid())
+  containerId     String?
+  image           String?
+  status          SandboxStatus   @default(PENDING)
+  exitCode        Int?
+  logs            String?
+  testResults     Json?
+  duration        Int?            // ms
+  incidentId      String
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  startedAt       DateTime?
+  completedAt     DateTime?
+
+  incident        Incident        @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@map("sandbox_runs")
+}
+
+model KnowledgeBase {
+  id             String   @id @default(cuid())
+  errorSignature String   // Hash or normalized string of the error message
+  rootCause      String   // The AI's diagnosed root cause
+  patchDiff      String   // The diff that successfully fixed it
+  repositoryId   String
+  repository     Repository @relation(fields: [repositoryId], references: [id], onDelete: Cascade)
+  createdAt      DateTime @default(now())
+}
+
+// ─────────────────────────────────────────────
+// PULL REQUEST
+// ─────────────────────────────────────────────
+model PullRequest {
+  id              String    @id @default(cuid())
+  githubPrId      BigInt?
+  title           String
+  body            String?
+  headBranch      String
+  baseBranch      String
+  htmlUrl         String?
+  state           String    @default("draft")
+  incidentId      String
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  incident        Incident  @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+
+  @@map("pull_requests")
+}
+
+// ─────────────────────────────────────────────
+// ACTIVITY FEED
+// ─────────────────────────────────────────────
+model Activity {
+  id          String   @id @default(cuid())
+  eventType   String   // e.g. "webhook_received", "patch_generated"
+  title       String
+  description String?
+  status      String?
+  metadata    Json?
+  userId      String?
+  workflowId  String?
+  incidentId  String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user        User?        @relation(fields: [userId], references: [id])
+  workflowRun WorkflowRun? @relation(fields: [workflowId], references: [id])
+  incident    Incident?    @relation(fields: [incidentId], references: [id])
+
+  @@map("activities")
+}
+
+// ─────────────────────────────────────────────
+// ENUMS
+// ─────────────────────────────────────────────
+
+enum Role {
+  USER
+  ADMIN
+}
+
+enum WorkflowStatus {
+  QUEUED
+  IN_PROGRESS
+  COMPLETED
+  WAITING
+  REQUESTED
+  PENDING
+}
+
+enum StepStatus {
+  QUEUED
+  IN_PROGRESS
+  COMPLETED
+  WAITING
+}
+
+enum Severity {
+  LOW
+  MEDIUM
+  HIGH
+  CRITICAL
+}
+
+enum IncidentStatus {
+  OPEN
+  DIAGNOSING
+  PATCH_GENERATED
+  VERIFYING
+  RESOLVED
+  CLOSED
+}
+
+enum PatchStatus {
+  PENDING
+  VERIFIED
+  APPLIED
+  REJECTED
+}
+
+enum SandboxStatus {
+  PENDING
+  RUNNING
+  PASSED
+  FAILED
+  TIMEOUT
+  ERROR
+}

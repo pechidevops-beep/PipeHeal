@@ -1,0 +1,56 @@
+import express from 'express';
+import cors from 'cors';
+import helmet from 'helmet';
+import compression from 'compression';
+
+import { env } from './config/env.js';
+import { requestLogger } from './middlewares/requestLogger.js';
+import { apiLimiter } from './middlewares/rateLimiter.js';
+import { errorHandler } from './middlewares/error.middleware.js';
+import routes from './routes/index.js';
+
+const app = express();
+
+// ── Security & Utility Middleware ────────────────────────────────────────────
+app.use(helmet()); // Set security HTTP headers
+app.use(cors({
+  origin: true, // Allow all origins for local dev (5173, 5174, etc.)
+  credentials: true,
+}));
+app.use(compression()); // Compress response bodies
+
+// ── Webhooks (Need raw body) ────────────────────────────────────────────────
+// The raw body is captured via the verify option in express.json() below.
+
+// ── Standard Body Parsers ───────────────────────────────────────────────────
+app.use(express.json({
+  verify: (req, res, buf) => {
+    if (req.originalUrl.includes('/api/v1/github/webhook')) {
+      req.rawBody = buf;
+    }
+  }
+}));
+app.use(express.urlencoded({ extended: true }));
+
+// ── Logging & Rate Limiting ─────────────────────────────────────────────────
+app.use(requestLogger);
+app.use('/api', apiLimiter);
+
+// ── Routes ──────────────────────────────────────────────────────────────────
+app.use('/api/v1', routes);
+
+// ── 404 Handler ─────────────────────────────────────────────────────────────
+app.use((req, res, next) => {
+  res.status(404).json({
+    success: false,
+    statusCode: 404,
+    code: 'NOT_FOUND',
+    message: `Cannot find ${req.method} ${req.originalUrl}`,
+    timestamp: new Date().toISOString()
+  });
+});
+
+// ── Global Error Handler ────────────────────────────────────────────────────
+app.use(errorHandler);
+
+export default app;

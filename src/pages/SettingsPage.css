@@ -1,0 +1,172 @@
+.settings-page {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.settings-header {
+  margin-bottom: 32px;
+}
+
+.settings-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #F9FAFB;
+  margin: 0 0 8px 0;
+}
+
+.settings-subtitle {
+  color: #9CA3AF;
+  margin: 0;
+  font-size: 15px;
+}
+
+.settings-layout {
+  display: flex;
+  gap: 32px;
+}
+
+.settings-sidebar {
+  width: 240px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.settings-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: transparent;
+  border: none;
+  color: #9CA3AF;
+  font-size: 15px;
+  font-weight: 500;
+  border-radius: 8px;
+  cursor: pointer;
+  text-align: left;
+  transition: all 0.2s ease;
+}
+
+.settings-nav-btn:hover {
+  background: #374151;
+  color: #F9FAFB;
+}
+
+.settings-nav-btn.active {
+  background: #3B82F6;
+  color: white;
+}
+
+.settings-nav-btn .material-symbols-outlined {
+  font-size: 20px;
+}
+
+.settings-content {
+  flex-grow: 1;
+}
+
+.settings-section h2 {
+  font-size: 20px;
+  color: #F9FAFB;
+  margin: 0 0 8px 0;
+}
+
+.settings-description {
+  color: #9CA3AF;
+  font-size: 14px;
+  margin: 0 0 24px 0;
+}
+
+.settings-card {
+  background: #1F2937;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  padding: 24px;
+  margin-bottom: 24px;
+}
+
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+
+.provider-logo {
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 700;
+  color: white;
+}
+
+.provider-logo.gemini {
+  background: linear-gradient(135deg, #10B981 0%, #3B82F6 100%);
+}
+
+.provider-logo.slack {
+  background: #E11D48;
+}
+
+.settings-card-header h3 {
+  color: #F9FAFB;
+  margin: 0 0 4px 0;
+  font-size: 16px;
+}
+
+.settings-card-header p {
+  color: #9CA3AF;
+  margin: 0;
+  font-size: 13px;
+}
+
+.settings-form-group {
+  margin-bottom: 20px;
+}
+
+.settings-form-group label {
+  display: block;
+  color: #D1D5DB;
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 8px;
+}
+
+.settings-input {
+  width: 100%;
+  background: #111827;
+  border: 1px solid #374151;
+  border-radius: 8px;
+  padding: 12px 16px;
+  color: #F9FAFB;
+  font-size: 14px;
+  outline: none;
+  transition: border-color 0.2s ease;
+}
+
+.settings-input:focus {
+  border-color: #3B82F6;
+}
+
+.settings-btn-primary {
+  background: #3B82F6;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.2s ease;
+}
+
+.settings-btn-primary:hover {
+  background: #2563EB;
+}

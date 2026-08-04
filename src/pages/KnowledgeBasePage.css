@@ -1,0 +1,129 @@
+.kb-page {
+  padding: 32px;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.kb-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 32px;
+}
+
+.kb-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #F9FAFB;
+  margin: 0 0 8px 0;
+}
+
+.kb-subtitle {
+  color: #9CA3AF;
+  margin: 0;
+  font-size: 15px;
+}
+
+.kb-repo-select {
+  background: #374151;
+  color: #F9FAFB;
+  border: 1px solid #4B5563;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  outline: none;
+  cursor: pointer;
+}
+
+.kb-repo-select:focus {
+  border-color: #60A5FA;
+}
+
+.kb-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 64px 32px;
+  background: #1F2937;
+  border-radius: 12px;
+  border: 1px dashed #374151;
+  text-align: center;
+}
+
+.kb-empty .material-symbols-outlined {
+  font-size: 48px;
+  color: #4B5563;
+  margin-bottom: 16px;
+}
+
+.kb-empty h3 {
+  color: #E5E7EB;
+  margin: 0 0 8px 0;
+  font-size: 18px;
+}
+
+.kb-empty p {
+  color: #9CA3AF;
+  max-width: 450px;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.kb-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.kb-card {
+  background: #1F2937;
+  border: 1px solid #374151;
+  border-radius: 12px;
+  padding: 24px;
+}
+
+.kb-card-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 20px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid #374151;
+}
+
+.kb-icon {
+  color: #8B5CF6; /* Purple for AI Memory */
+}
+
+.kb-time {
+  color: #9CA3AF;
+  font-size: 14px;
+}
+
+.kb-label {
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6B7280;
+  margin: 0 0 8px 0;
+}
+
+.kb-text {
+  color: #D1D5DB;
+  font-size: 15px;
+  line-height: 1.6;
+  margin: 0;
+}
+
+.kb-diff {
+  background: #111827;
+  padding: 16px;
+  border-radius: 8px;
+  border: 1px solid #374151;
+  overflow-x: auto;
+  font-family: 'JetBrains Mono', 'Courier New', Courier, monospace;
+  font-size: 13px;
+  color: #E5E7EB;
+  margin: 0;
+}

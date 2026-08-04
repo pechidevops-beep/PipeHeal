@@ -1,0 +1,193 @@
+/* ====================================================
+   TOP BAR STYLES
+   ==================================================== */
+
+.topbar-tabs {
+  display: flex;
+  align-items: center;
+  gap: 0;
+  height: 100%;
+}
+
+.topbar-tab {
+  display: flex;
+  align-items: center;
+  height: 64px;
+  padding: 0 18px;
+  text-decoration: none;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #9CA3AF;
+  border-bottom: 2px solid transparent;
+  transition: color 0.15s ease, border-color 0.15s ease;
+}
+
+.topbar-tab:hover {
+  color: #dfe2f1;
+}
+
+.topbar-tab--active {
+  color: #4cd7f6;
+  border-bottom-color: #4cd7f6;
+}
+
+/* ── Actions row ─────────────────────────────────── */
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+/* ── Search ──────────────────────────────────────── */
+.topbar-search {
+  position: relative;
+  display: flex;
+  align-items: center;
+}
+
+.topbar-search-icon {
+  position: absolute;
+  left: 10px;
+  font-size: 16px !important;
+  color: #9CA3AF;
+  pointer-events: none;
+}
+
+.topbar-search-input {
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 20px;
+  padding: 6px 14px 6px 34px;
+  font-size: 13px;
+  color: #dfe2f1;
+  width: 220px;
+  outline: none;
+  transition: border-color 0.15s ease, width 0.2s ease;
+}
+
+.topbar-search-input::placeholder {
+  color: #9CA3AF;
+}
+
+.topbar-search-input:focus {
+  border-color: rgba(76, 215, 246, 0.4);
+  width: 260px;
+}
+
+/* ── Repo badge ──────────────────────────────────── */
+.topbar-repo-badge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(76, 215, 246, 0.08);
+  border: 1px solid rgba(76, 215, 246, 0.2);
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #4cd7f6;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  white-space: nowrap;
+}
+
+.topbar-repo-badge:hover {
+  background: rgba(76, 215, 246, 0.14);
+}
+
+/* ── Deploy button ───────────────────────────────── */
+.topbar-deploy-btn {
+  background: rgba(173, 198, 255, 0.12);
+  border: 1px solid rgba(173, 198, 255, 0.3);
+  border-radius: 8px;
+  padding: 7px 18px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #adc6ff;
+  cursor: pointer;
+  transition: background 0.15s ease, box-shadow 0.15s ease;
+  white-space: nowrap;
+}
+
+.topbar-deploy-btn:hover {
+  background: rgba(173, 198, 255, 0.2);
+  box-shadow: 0 0 14px rgba(173, 198, 255, 0.15);
+}
+
+/* ── Icon button group ───────────────────────────── */
+.topbar-icon-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding-left: 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.topbar-icon-btn {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: none;
+  color: #9CA3AF;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+  position: relative;
+}
+
+.topbar-icon-btn:hover {
+  background: rgba(255, 255, 255, 0.06);
+  color: #dfe2f1;
+}
+
+.topbar-icon-btn .material-symbols-outlined {
+  font-size: 20px !important;
+}
+
+/* ── Avatar ──────────────────────────────────────── */
+.topbar-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #adc6ff, #4cd7f6);
+  padding: 1px;
+  cursor: pointer;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #002e6a;
+  margin-left: 4px;
+}
+
+.topbar-avatar .material-symbols-outlined {
+  font-size: 18px !important;
+  font-variation-settings: 'FILL' 1;
+}
+
+/* ── Mobile: hide search + repo on small screens ─── */
+@media (max-width: 768px) {
+  .topbar-search,
+  .topbar-repo-badge {
+    display: none;
+  }
+}
+
+@media (max-width: 600px) {
+  .topbar-tabs {
+    gap: 0;
+  }
+  .topbar-tab {
+    padding: 0 12px;
+    font-size: 12px;
+  }
+  .topbar-deploy-btn {
+    padding: 6px 12px;
+    font-size: 12px;
+  }
+}
