@@ -1,3 +1,4 @@
+import './instrument.mjs';
 import { createServer } from 'http';
 import app from './app.js';
 import { env } from './config/env.js';

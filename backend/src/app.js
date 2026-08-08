@@ -62,6 +62,8 @@ app.use((req, res, next) => {
 });
 
 // ── Global Error Handler ────────────────────────────────────────────────────
+import * as Sentry from '@sentry/node';
+Sentry.setupExpressErrorHandler(app);
 app.use(errorHandler);
 
 export default app;
