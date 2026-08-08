@@ -4,15 +4,27 @@ import { db } from '../config/prisma.js';
 export const activityController = {
   async getActivities(req, res) {
     const { page = 1, limit = 50 } = req.query;
+    const userId = req.user?.id;
     
     // Convert to integers and validate
     const pageNum = Math.max(1, parseInt(page, 10));
     const limitNum = Math.min(100, Math.max(1, parseInt(limit, 10)));
     const skip = (pageNum - 1) * limitNum;
 
-    // Fetch activities ordered by newest first
+    // Scope to user: activities they created OR for their repositories/incidents
+    const userWhere = userId
+      ? {
+          OR: [
+            { userId },
+            { workflowRun: { repository: { userId } } },
+            { incident: { repository: { userId } } },
+          ],
+        }
+      : {};
+
     const [activities, total] = await Promise.all([
       db.activity.findMany({
+        where: userWhere,
         skip,
         take: limitNum,
         orderBy: { createdAt: 'desc' },
@@ -22,7 +34,7 @@ export const activityController = {
           incident: { select: { title: true, status: true } },
         }
       }),
-      db.activity.count()
+      db.activity.count({ where: userWhere }),
     ]);
 
     return ApiResponse.ok(res, {

@@ -57,3 +57,22 @@ export const aiLimiter = rateLimit({
   },
   skip: () => env.isDevelopment,
 });
+
+/**
+ * Webhook endpoint limiter — prevents queue spam / Gemini quota abuse.
+ * 60 webhook deliveries per minute per IP.
+ */
+export const webhookLimiter = rateLimit({
+  windowMs: 60 * 1000,
+  max: 60,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: {
+    success: false,
+    statusCode: 429,
+    code: 'RATE_LIMITED',
+    message: 'Webhook rate limit exceeded.',
+    timestamp: new Date().toISOString(),
+  },
+  // Don't skip in dev — test rate limiting locally too
+});

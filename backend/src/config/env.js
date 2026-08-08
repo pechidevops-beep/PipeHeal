@@ -73,6 +73,13 @@ export const env = {
   LOG_LEVEL: getEnv('LOG_LEVEL', 'info'),
   LOG_DIR: getEnv('LOG_DIR', 'logs'),
 
+  // Database Connection Pooling
+  // Supabase free tier: ~20 connections total. Web=5, Worker=5 = 10 used.
+  DB_POOL_SIZE: parseInt(getEnv('DB_POOL_SIZE', '5'), 10),
+
+  // Observability
+  SENTRY_DSN: getEnv('SENTRY_DSN', ''),
+
   // Feature flags (auto-detected from credential presence)
   get githubConfigured() {
     return Boolean(this.GITHUB_CLIENT_ID && this.GITHUB_CLIENT_SECRET);

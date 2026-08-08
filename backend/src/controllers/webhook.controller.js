@@ -15,8 +15,9 @@ export const webhookController = {
   async githubWebhook(req, res) {
     const signature = req.headers['x-hub-signature-256'];
     const event = req.headers['x-github-event'];
+    const deliveryId = req.headers['x-github-delivery'];
     const rawBody = req.rawBody; // Captured by express.json({ verify })
-    const payload = req.body; // Already parsed by express.json()
+    const payload = req.body;   // Already parsed by express.json()
 
     if (!signature) {
       throw new ApiError(401, 'Missing webhook signature', ERROR_CODES.WEBHOOK_INVALID);
@@ -31,10 +32,28 @@ export const webhookController = {
       throw new ApiError(401, 'Invalid webhook signature', ERROR_CODES.WEBHOOK_INVALID);
     }
 
+    // ── Idempotency Check ─────────────────────────────────────────────────────
+    // GitHub retries on timeout or non-2xx. Prevent duplicate processing.
+    // Uses create+catch(P2002) to be race-condition safe for concurrent duplicates.
+    if (deliveryId) {
+      const { db } = await import('../config/prisma.js');
+      try {
+        await db.webhookEvent.create({ data: { deliveryId, event: event || 'unknown' } });
+      } catch (uniqueErr) {
+        // P2002 = unique constraint violation → already processed
+        if (uniqueErr.code === 'P2002') {
+          logger.info(`[Webhook] Duplicate delivery ${deliveryId} — already processed. Skipping.`);
+          return ApiResponse.ok(res, null, 'Webhook already processed');
+        }
+        // Other DB errors — log but don't block webhook processing
+        logger.warn(`[Webhook] Could not record delivery ${deliveryId}: ${uniqueErr.message}`);
+      }
+    }
+
     // Fire and forget — don't block GitHub's response
     if (event === 'workflow_run' || event === 'workflow_job' || event === 'push' || event === 'pull_request') {
       webhookService.processWebhook(event, payload).catch((err) => {
-        logger.error(`[Webhook] Async processing failed: ${err.message}`);
+        logger.error(`[Webhook] Async processing failed [delivery=${deliveryId}]: ${err.message}`);
       });
     } else {
       logger.info(`[Webhook] Ignoring unhandled event type: ${event}`);

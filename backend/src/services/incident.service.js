@@ -8,9 +8,13 @@ export const incidentService = {
     return incidentRepo.findAll(filters);
   },
 
-  async getIncident(id) {
+  async getIncident(id, userId = null) {
     const incident = await incidentRepo.findById(id);
     if (!incident) throw new ApiError(404, 'Incident not found', ERROR_CODES.NOT_FOUND);
+    // Ownership check: if userId provided, verify the incident belongs to their repository
+    if (userId && incident.repository?.userId !== userId) {
+      throw new ApiError(404, 'Incident not found', ERROR_CODES.NOT_FOUND);
+    }
     return incident;
   },
 
@@ -31,6 +35,10 @@ export const incidentService = {
   async updateIncident(id, data, userId) {
     const incident = await incidentRepo.findById(id);
     if (!incident) throw new ApiError(404, 'Incident not found', ERROR_CODES.NOT_FOUND);
+    // Ownership check when userId is provided
+    if (userId && userId !== 'system' && incident.repository?.userId !== userId) {
+      throw new ApiError(404, 'Incident not found', ERROR_CODES.NOT_FOUND);
+    }
 
     const updated = await incidentRepo.update(id, data);
 

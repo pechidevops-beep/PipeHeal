@@ -29,7 +29,7 @@ export const incidentController = {
   },
 
   async getIncident(req, res) {
-    const incident = await incidentService.getIncident(req.params.id);
+    const incident = await incidentService.getIncident(req.params.id, req.user.id);
     return ApiResponse.ok(res, incident, 'Incident retrieved');
   },
 
@@ -45,8 +45,8 @@ export const incidentController = {
 
   async generatePatch(req, res) {
     const incidentId = req.params.id;
-    // 1. Fetch incident from DB
-    const incident = await incidentService.getIncident(incidentId);
+    // 1. Fetch incident from DB — verify it belongs to this user
+    const incident = await incidentService.getIncident(incidentId, req.user.id);
     if (!incident) throw new ApiError(404, 'Incident not found');
 
     const repoName = incident.repository?.name;

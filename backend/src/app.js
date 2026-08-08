@@ -14,7 +14,15 @@ const app = express();
 // ── Security & Utility Middleware ────────────────────────────────────────────
 app.use(helmet()); // Set security HTTP headers
 app.use(cors({
-  origin: true, // Allow all origins for local dev (5173, 5174, etc.)
+  origin: (origin, callback) => {
+    // Allow requests with no origin (curl, Postman, server-to-server)
+    if (!origin) return callback(null, true);
+    const allowed = env.ALLOWED_ORIGINS;
+    if (allowed.includes(origin) || env.isDevelopment) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS: origin ${origin} not allowed`), false);
+  },
   credentials: true,
 }));
 app.use(compression()); // Compress response bodies

@@ -327,3 +327,15 @@ enum SandboxStatus {
   TIMEOUT
   ERROR
 }
+
+// ─────────────────────────────────────────────
+// WEBHOOK EVENT (Idempotency)
+// ─────────────────────────────────────────────
+model WebhookEvent {
+  id          String   @id @default(cuid())
+  deliveryId  String   @unique  // X-GitHub-Delivery header
+  event       String            // workflow_run, push, etc.
+  processedAt DateTime @default(now())
+
+  @@map("webhook_events")
+}
