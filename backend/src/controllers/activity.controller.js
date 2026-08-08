@@ -17,7 +17,7 @@ export const activityController = {
         take: limitNum,
         orderBy: { createdAt: 'desc' },
         include: {
-          user: { select: { name: true, avatarUrl: true } },
+          user: { select: { login: true, firstName: true, lastName: true, avatarUrl: true } },
           workflowRun: { select: { workflowName: true, headBranch: true, status: true, headSha: true } },
           incident: { select: { title: true, status: true } },
         }

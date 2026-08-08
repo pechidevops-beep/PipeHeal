@@ -47,9 +47,18 @@ export function parseFailedLogs(rawLogs, jobsData) {
     extractedLogs = lines.slice(-500).join('\n') + '\n... [TRUNCATED]';
   }
 
+  let finalErrorMessage = `Job: ${failedJobName || 'Unknown'}, Step: ${failedStep ? failedStep.name : 'Unknown'}`;
+  if (!failedJobName) {
+    if (extractedLogs) {
+      finalErrorMessage = extractedLogs.split('\n').find(l => l.trim().length > 0)?.substring(0, 100) || 'Workflow Failed to Start (YAML Syntax Error)';
+    } else {
+      finalErrorMessage = 'Workflow Failed to Start (Possible YAML Syntax Error)';
+    }
+  }
+
   return {
     errorType: 'CI/CD Pipeline Failure',
-    errorMessage: `Job: ${failedJobName || 'Unknown'}, Step: ${failedStep ? failedStep.name : 'Unknown'}`,
+    errorMessage: finalErrorMessage,
     logs: extractedLogs || 'No specific logs could be extracted. The workflow might have failed to start due to a YAML syntax error or invalid configuration.'
   };
 }

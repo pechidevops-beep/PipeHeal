@@ -15,14 +15,20 @@ datasource db {
 // USER
 // ─────────────────────────────────────────────
 model User {
-  id            String   @id @default(cuid())
-  githubId      String   @unique
-  login         String   @unique
-  name          String?
-  email         String?  @unique
-  avatarUrl     String?
-  accessToken   String?  // encrypted GitHub OAuth token
-  role          Role     @default(USER)
+  id                String   @id @default(cuid())
+  email             String   @unique
+  password          String?
+  firstName         String?
+  lastName          String?
+  emailVerified     Boolean  @default(false)
+  tokenVersion      Int      @default(0)
+
+  githubId          String?  @unique
+  login             String?
+  avatarUrl         String?
+  githubAccessToken String?  // store ENCRYPTED, not raw
+
+  role              Role     @default(USER)
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

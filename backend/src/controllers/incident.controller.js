@@ -57,8 +57,15 @@ export const incidentController = {
     const user = await db.user.findUnique({
       where: { id: req.user.id }
     });
-    if (!user?.accessToken) throw new ApiError(401, 'GitHub account not connected or missing token');
-    const token = user.accessToken;
+    if (!user?.githubAccessToken) throw new ApiError(401, 'GitHub account not connected or missing token');
+    
+    let token = user.githubAccessToken;
+    try {
+      const { decryptToken } = await import('../utils/crypto.js');
+      token = decryptToken(token);
+    } catch (e) {
+      throw new ApiError(500, 'Failed to decrypt GitHub token');
+    }
 
     const filePath = req.body.filePath || '.github/workflows/pipeheal-test.yml';
     const result = await incidentService.generatePatchAndPR(incidentId, req.user.id, token, filePath);

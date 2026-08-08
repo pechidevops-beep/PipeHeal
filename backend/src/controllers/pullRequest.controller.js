@@ -4,7 +4,7 @@ import { ApiResponse } from '../utils/ApiResponse.js';
 export const pullRequestController = {
   async createPullRequest(req, res) {
     const { incidentId, title, body, headBranch, baseBranch } = req.body;
-    const token = req.user.accessToken;
+    const token = req.user.githubAccessToken;
 
     const pr = await pullRequestService.createDraftPR(
       incidentId,

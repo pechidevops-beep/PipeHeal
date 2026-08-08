@@ -18,7 +18,7 @@ export const authenticate = asyncHandler(async (req, _res, next) => {
       if (db) {
         try {
           const firstUser = await db.user.findFirst({
-            select: { id: true, login: true, role: true, email: true, avatarUrl: true, accessToken: true },
+            select: { id: true, login: true, role: true, email: true, avatarUrl: true, githubAccessToken: true },
             orderBy: { createdAt: 'asc' },
           });
           if (firstUser) {
@@ -44,7 +44,7 @@ export const authenticate = asyncHandler(async (req, _res, next) => {
     try {
       const user = await db.user.findUnique({
         where: { id: decoded.userId },
-        select: { id: true, login: true, role: true, email: true, avatarUrl: true, accessToken: true },
+        select: { id: true, login: true, role: true, email: true, avatarUrl: true, githubAccessToken: true },
       });
       if (!user) throw ApiError.unauthorized('User no longer exists');
       req.user = { ...decoded, ...user };

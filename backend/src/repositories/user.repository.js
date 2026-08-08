@@ -15,14 +15,21 @@ export const userRepository = {
     return db.user.findUnique({ where: { githubId } });
   },
 
-  async findByLogin(login) {
+  async findByEmail(email) {
     if (!db) return null;
-    return db.user.findUnique({ where: { login } });
+    return db.user.findUnique({ where: { email } });
   },
 
   async create(data) {
     if (!db) throw ApiError.serviceUnavailable('Database');
-    return db.user.create({ data });
+    try {
+      return await db.user.create({ data });
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ApiError(409, 'A user with this email or github account already exists.', 'P2002');
+      }
+      throw error;
+    }
   },
 
   async upsert(githubId, data) {
@@ -36,7 +43,14 @@ export const userRepository = {
 
   async update(id, data) {
     if (!db) throw ApiError.serviceUnavailable('Database');
-    return db.user.update({ where: { id }, data });
+    try {
+      return await db.user.update({ where: { id }, data });
+    } catch (error) {
+      if (error.code === 'P2002') {
+        throw new ApiError(409, 'Unique constraint failed on update.', 'P2002');
+      }
+      throw error;
+    }
   },
 
   async delete(id) {

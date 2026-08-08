@@ -12,6 +12,10 @@ export const redisConnection = process.env.REDIS_URL
       maxRetriesPerRequest: null
     });
 
+redisConnection.on('error', (err) => {
+  logger.warn(`[Redis] Connection error: ${err.message}. Auto-fix worker will not run.`);
+});
+
 // Create the Auto-Fix Queue
 export const autoFixQueue = new Queue('AutoFixQueue', {
   connection: redisConnection,

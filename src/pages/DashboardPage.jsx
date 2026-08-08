@@ -1,10 +1,35 @@
 import ShaderBackground from '../components/ShaderBackground';
 import { useDashboard } from '../hooks/useDashboard';
 import { formatDistanceToNow } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
+import NumberCounter from '../components/NumberCounter';
 import './DashboardPage.css';
+import { useAuth } from '../contexts/AuthContext';
 
 export default function DashboardPage() {
   const { stats, activities, loading, error } = useDashboard();
+  const { user } = useAuth();
+
+  const handleConnectGithub = () => {
+    const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+    window.location.href = `${apiUrl}/auth/github?state=connect:${user?.id}`;
+  };
+
+  if (!user?.githubId) {
+    return (
+      <div className="dashboard-page flex flex-col items-center justify-center text-center p-8">
+        <span className="material-symbols-outlined text-6xl text-[var(--accent-blue)] mb-4">account_tree</span>
+        <h2 className="text-2xl font-bold text-white mb-2">Connect GitHub to continue</h2>
+        <p className="text-[var(--text-secondary)] max-w-md mb-8">
+          PipeHeal requires read-only access to your repositories and workflows to monitor and auto-remediate pipeline failures.
+        </p>
+        <button onClick={handleConnectGithub} className="premium-button px-6 py-3 flex items-center gap-2 text-[14px]">
+          <span className="material-symbols-outlined text-[18px]">add_link</span>
+          Connect GitHub
+        </button>
+      </div>
+    );
+  }
 
   if (loading && !stats) {
     return (
@@ -81,7 +106,7 @@ export default function DashboardPage() {
           <h1 className="page-title">Observatory</h1>
           <p className="page-subtitle">Real-time system health and autonomous interventions.</p>
         </div>
-        <button className="btn-deploy">Deploy</button>
+        <button className="btn-deploy premium-button">Deploy</button>
       </div>
 
       {/* Hero Status Card */}
@@ -99,7 +124,7 @@ export default function DashboardPage() {
           <h2 className="hero-headline">
             AI Monitoring{' '}
             <span className="hero-headline-highlight">
-              {stats?.stats?.totalPipelines || 0} Active Pipelines
+              <NumberCounter value={stats?.stats?.totalPipelines || 0} /> Active Pipelines
             </span>
           </h2>
           <p className="hero-description">
@@ -109,27 +134,44 @@ export default function DashboardPage() {
       </section>
 
       {/* Metric Cards */}
-      <section className="metrics-grid">
+      <motion.section 
+        className="metrics-grid"
+        initial="hidden"
+        animate="visible"
+        variants={{
+          hidden: { opacity: 0 },
+          visible: {
+            opacity: 1,
+            transition: { staggerChildren: 0.1 }
+          }
+        }}
+      >
         {dynamicCards.map((card) => (
-          <div
+          <motion.div
             key={card.title}
-            className={`metric-card${card.glow ? ' metric-card--glow' : ''}`}
+            variants={{
+              hidden: { opacity: 0, y: 20 },
+              visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
+            }}
+            className={`metric-card premium-card premium-card--accent-edge premium-card--accent-${card.accentClass.split('--')[1]}${card.glow ? ' metric-card--glow' : ''}`}
           >
             <div className={`metric-card-accent ${card.accentClass}`} />
             <div className="metric-card-header">
-              <span className="metric-card-label">{card.title}</span>
+              <span className="metric-card-label section-label">{card.title}</span>
               <span className={`material-symbols-outlined metric-card-icon ${card.iconClass}`}>
                 {card.icon}
               </span>
             </div>
             <div className="metric-card-value-row">
-              <span className="metric-card-value">{card.value}</span>
+              <span className="metric-card-value stat-value">
+                <NumberCounter value={card.value} />
+              </span>
               {card.suffix && <span className="metric-card-suffix">{card.suffix}</span>}
             </div>
-            <div className={`metric-card-badge ${card.badgeClass}`}>{card.badge}</div>
-          </div>
+            <div className={`metric-card-badge pill pill-${card.badgeClass.split('--')[1]}`}>{card.badge}</div>
+          </motion.div>
         ))}
-      </section>
+      </motion.section>
 
       {/* Bottom Grid */}
       <div className="dashboard-bottom-grid">

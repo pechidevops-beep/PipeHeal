@@ -33,13 +33,22 @@ export const repositoryService = {
    */
   async listGithubRepositories(userId, page = 1, limit = 100, sort = 'updated', direction = 'desc') {
     // Fetch user from DB to get access token
-    const user = await db.user.findUnique({ where: { id: userId }, select: { accessToken: true } });
-    if (!user?.accessToken) {
+    const user = await db.user.findUnique({ where: { id: userId }, select: { githubAccessToken: true } });
+    if (!user?.githubAccessToken) {
       // In dev mode without real OAuth, return empty list
       logger.warn('[Repository] No GitHub token for user — returning empty GitHub repo list');
       return [];
     }
-    return githubService.listRepositories(user.accessToken, page, limit, sort, direction);
+    
+    let token = user.githubAccessToken;
+    try {
+      const { decryptToken } = await import('../utils/crypto.js');
+      token = decryptToken(user.githubAccessToken);
+    } catch (e) {
+      logger.error(`Failed to decrypt github token: ${e.message}`);
+    }
+
+    return githubService.listRepositories(token, page, limit, sort, direction);
   },
 
   /**
@@ -131,10 +140,12 @@ export const repositoryService = {
 
     // Delete GitHub webhook (best-effort)
     if (repo.webhookId) {
-      const user = await db.user.findUnique({ where: { id: userId }, select: { accessToken: true } });
-      if (user?.accessToken) {
+      const user = await db.user.findUnique({ where: { id: userId }, select: { githubAccessToken: true } });
+      if (user?.githubAccessToken) {
         try {
-          await githubService.deleteWebhook(repo.owner, repo.name, repo.webhookId, user.accessToken);
+          const { decryptToken } = await import('../utils/crypto.js');
+          const token = decryptToken(user.githubAccessToken);
+          await githubService.deleteWebhook(repo.owner, repo.name, repo.webhookId, token);
         } catch (err) {
           logger.warn(`[Repository] Could not delete webhook ${repo.webhookId}: ${err.message}`);
         }
@@ -164,13 +175,21 @@ export const repositoryService = {
    */
   async syncRepository(id, userId) {
     const repo = await this.getRepository(id, userId);
-    const user = await db.user.findUnique({ where: { id: userId }, select: { accessToken: true } });
+    const user = await db.user.findUnique({ where: { id: userId }, select: { githubAccessToken: true } });
 
-    if (!user?.accessToken) {
+    if (!user?.githubAccessToken) {
       throw new ApiError(400, 'GitHub token required for sync', ERROR_CODES.UNAUTHORIZED);
     }
+    
+    let token = user.githubAccessToken;
+    try {
+      const { decryptToken } = await import('../utils/crypto.js');
+      token = decryptToken(user.githubAccessToken);
+    } catch (e) {
+      logger.error(`Failed to decrypt github token: ${e.message}`);
+    }
 
-    const ghRepo = await githubService.syncRepository(repo.owner, repo.name, user.accessToken);
+    const ghRepo = await githubService.syncRepository(repo.owner, repo.name, token);
 
     const updated = await repositoryRepo.update(id, {
       defaultBranch: ghRepo.default_branch,

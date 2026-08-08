@@ -36,4 +36,8 @@ autoFixWorker.on('failed', (job, error) => {
   logger.error(`[Worker] Job with id ${job.id} has failed with ${error.message}`);
 });
 
+autoFixWorker.on('error', (err) => {
+  logger.warn(`[Worker] Error: ${err.message}`);
+});
+
 logger.info('[Worker] AutoFixWorker started listening for jobs');

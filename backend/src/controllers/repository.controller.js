@@ -39,7 +39,7 @@ export const repositoryController = {
    * Tracks a new repository (validates, saves, creates webhook).
    */
   async addRepository(req, res) {
-    const repo = await repositoryService.addRepository(req.user.id, req.body, req.user.accessToken);
+    const repo = await repositoryService.addRepository(req.user.id, req.body, req.user.githubAccessToken);
     return ApiResponse.created(res, repo, 'Repository tracked successfully');
   },
 

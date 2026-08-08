@@ -38,6 +38,25 @@ You MUST return ONLY a raw JSON object with the following schema, and absolutely
       } else {
         diagnosisJSON = await this.callGemini(prompt);
       }
+      
+      let firstBrace = diagnosisJSON.indexOf('{');
+      if (firstBrace !== -1) {
+        let braceCount = 0;
+        let lastBrace = -1;
+        for (let i = firstBrace; i < diagnosisJSON.length; i++) {
+          if (diagnosisJSON[i] === '{') braceCount++;
+          else if (diagnosisJSON[i] === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              lastBrace = i;
+              break;
+            }
+          }
+        }
+        if (lastBrace !== -1) {
+          diagnosisJSON = diagnosisJSON.substring(firstBrace, lastBrace + 1);
+        }
+      }
       return JSON.parse(diagnosisJSON);
     } catch (err) {
       logger.error(`[AI Service] AI diagnosis failed: ${err.message}`);
@@ -50,9 +69,8 @@ You MUST return ONLY a raw JSON object with the following schema, and absolutely
     const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
     
     const body = {
-      system_instruction: { parts: { text: systemPrompt || this.getSystemPrompt() } },
-      contents: [{ parts: [{ text: prompt }] }],
-      generationConfig: { response_mime_type: "application/json" }
+      system_instruction: { parts: [{ text: systemPrompt || this.getSystemPrompt() }] },
+      contents: [{ parts: [{ text: prompt }] }]
     };
 
     const res = await axios.post(url, body, { headers: { 'Content-Type': 'application/json' } });
@@ -133,8 +151,23 @@ ${originalCode}`;
       }
       
       let cleanResponse = textResponse.trim();
-      if (cleanResponse.startsWith('```')) {
-        cleanResponse = cleanResponse.replace(/^```(json)?\n/, '').replace(/\n```$/, '');
+      let firstBrace = cleanResponse.indexOf('{');
+      if (firstBrace !== -1) {
+        let braceCount = 0;
+        let lastBrace = -1;
+        for (let i = firstBrace; i < cleanResponse.length; i++) {
+          if (cleanResponse[i] === '{') braceCount++;
+          else if (cleanResponse[i] === '}') {
+            braceCount--;
+            if (braceCount === 0) {
+              lastBrace = i;
+              break;
+            }
+          }
+        }
+        if (lastBrace !== -1) {
+          cleanResponse = cleanResponse.substring(firstBrace, lastBrace + 1);
+        }
       }
 
       return JSON.parse(cleanResponse);

@@ -21,7 +21,7 @@ export default function AuthCallbackPage() {
     if (err) {
       setError(decodeURIComponent(err));
       setStatus('Authentication failed');
-      setTimeout(() => navigate('/'), 3000);
+      setTimeout(() => navigate('/login'), 3000);
       return;
     }
 
@@ -30,7 +30,7 @@ export default function AuthCallbackPage() {
       if (refresh) localStorage.setItem('pipeheal_refresh_token', refresh);
       if (login) localStorage.setItem('pipeheal_login', login);
       setStatus(`Welcome, ${login || 'user'}! Redirecting to dashboard...`);
-      setTimeout(() => navigate('/'), 1000);
+      setTimeout(() => navigate('/dashboard'), 1000);
     } else {
       setError('No authentication token received');
       setTimeout(() => navigate('/'), 3000);

@@ -8,9 +8,9 @@ import 'dotenv/config';
 function requireEnv(key) {
   const value = process.env[key];
   if (!value) {
-    console.warn(`[ENV] Warning: ${key} is not set. Some features may be disabled.`);
+    throw new Error(`[ENV] FATAL ERROR: ${key} is not set in the environment.`);
   }
-  return value || '';
+  return value;
 }
 
 function getEnv(key, defaultValue = '') {
@@ -25,7 +25,7 @@ export const env = {
   isDevelopment: getEnv('NODE_ENV', 'development') === 'development',
 
   // Database
-  DATABASE_URL: getEnv('DATABASE_URL'),
+  DATABASE_URL: requireEnv('DATABASE_URL'),
   DIRECT_URL: getEnv('DIRECT_URL'),
 
   // Supabase
@@ -34,17 +34,20 @@ export const env = {
   SUPABASE_SERVICE_ROLE_KEY: getEnv('SUPABASE_SERVICE_ROLE_KEY'),
 
   // JWT
-  JWT_SECRET: getEnv('JWT_SECRET', 'pipeheal-dev-secret-change-in-production-32chars'),
-  JWT_EXPIRES_IN: getEnv('JWT_EXPIRES_IN', '7d'),
-  JWT_REFRESH_SECRET: getEnv('JWT_REFRESH_SECRET', 'pipeheal-refresh-secret-change-in-prod'),
-  JWT_REFRESH_EXPIRES_IN: getEnv('JWT_REFRESH_EXPIRES_IN', '30d'),
+  JWT_SECRET: requireEnv('JWT_SECRET'),
+  JWT_EXPIRES_IN: getEnv('JWT_EXPIRES_IN', '15m'), // Note: 15m as per instructions
+  JWT_REFRESH_SECRET: requireEnv('JWT_REFRESH_SECRET'),
+  JWT_REFRESH_EXPIRES_IN: getEnv('JWT_REFRESH_EXPIRES_IN', '7d'),
 
   // GitHub
-  GITHUB_CLIENT_ID: getEnv('GITHUB_CLIENT_ID'),
-  GITHUB_CLIENT_SECRET: getEnv('GITHUB_CLIENT_SECRET'),
+  GITHUB_CLIENT_ID: requireEnv('GITHUB_CLIENT_ID'),
+  GITHUB_CLIENT_SECRET: requireEnv('GITHUB_CLIENT_SECRET'),
   GITHUB_WEBHOOK_SECRET: getEnv('GITHUB_WEBHOOK_SECRET', 'dev-webhook-secret'),
-  GITHUB_CALLBACK_URL: getEnv('GITHUB_CALLBACK_URL', 'http://localhost:3001/api/v1/github/callback'),
+  GITHUB_CALLBACK_URL: getEnv('GITHUB_CALLBACK_URL', 'http://localhost:3001/api/v1/auth/github/callback'), // changed from github to auth/github
   WEBHOOK_BASE_URL: getEnv('WEBHOOK_BASE_URL', 'http://localhost:3001'),
+
+  // Encryption
+  ENCRYPTION_KEY: requireEnv('ENCRYPTION_KEY'),
 
   // AI
   CLAUDE_API_KEY: getEnv('CLAUDE_API_KEY'),

@@ -2,6 +2,31 @@
    TOP BAR STYLES
    ==================================================== */
 
+.app-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: 64px;
+  background: rgba(10, 14, 26, 0.85); /* matches var(--bg-base) at 85% */
+  border-bottom: 1px solid var(--border-default);
+  backdrop-filter: blur(16px);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  flex-shrink: 0;
+}
+
+.topbar-hamburger {
+  display: none;
+  background: transparent;
+  border: none;
+  color: var(--text-primary);
+  cursor: pointer;
+  margin-right: 16px;
+  padding: 4px;
+}
+
 .topbar-tabs {
   display: flex;
   align-items: center;
@@ -19,18 +44,19 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #9CA3AF;
+  color: var(--text-muted);
   border-bottom: 2px solid transparent;
   transition: color 0.15s ease, border-color 0.15s ease;
+  white-space: nowrap;
 }
 
 .topbar-tab:hover {
-  color: #dfe2f1;
+  color: var(--text-primary);
 }
 
 .topbar-tab--active {
-  color: #4cd7f6;
-  border-bottom-color: #4cd7f6;
+  color: var(--accent-cyan);
+  border-bottom-color: var(--accent-cyan);
 }
 
 /* ── Actions row ─────────────────────────────────── */
@@ -51,29 +77,30 @@
   position: absolute;
   left: 10px;
   font-size: 16px !important;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   pointer-events: none;
 }
 
 .topbar-search-input {
   background: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--border-default);
   border-radius: 20px;
   padding: 6px 14px 6px 34px;
   font-size: 13px;
-  color: #dfe2f1;
+  color: var(--text-primary);
   width: 220px;
   outline: none;
-  transition: border-color 0.15s ease, width 0.2s ease;
+  transition: border-color 0.15s ease, width 0.2s cubic-bezier(0.16, 1, 0.3, 1), background 0.15s ease;
 }
 
 .topbar-search-input::placeholder {
-  color: #9CA3AF;
+  color: var(--text-muted);
 }
 
 .topbar-search-input:focus {
-  border-color: rgba(76, 215, 246, 0.4);
+  border-color: rgba(56, 189, 248, 0.4); /* accent-cyan */
   width: 260px;
+  background: rgba(17, 22, 35, 0.9);
 }
 
 /* ── Repo badge ──────────────────────────────────── */
@@ -81,39 +108,29 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  background: rgba(76, 215, 246, 0.08);
-  border: 1px solid rgba(76, 215, 246, 0.2);
+  background: rgba(56, 189, 248, 0.08); /* accent-cyan */
+  border: 1px solid rgba(56, 189, 248, 0.2);
   border-radius: 20px;
   padding: 5px 12px;
   font-size: 12px;
   font-weight: 500;
-  color: #4cd7f6;
+  color: var(--accent-cyan);
   cursor: pointer;
   transition: background 0.15s ease;
   white-space: nowrap;
 }
 
 .topbar-repo-badge:hover {
-  background: rgba(76, 215, 246, 0.14);
+  background: rgba(56, 189, 248, 0.14);
 }
 
-/* ── Deploy button ───────────────────────────────── */
+/* ── Deploy button (overrides premium-button) ────── */
 .topbar-deploy-btn {
-  background: rgba(173, 198, 255, 0.12);
-  border: 1px solid rgba(173, 198, 255, 0.3);
-  border-radius: 8px;
   padding: 7px 18px;
   font-size: 13px;
-  font-weight: 600;
-  color: #adc6ff;
   cursor: pointer;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
   white-space: nowrap;
-}
-
-.topbar-deploy-btn:hover {
-  background: rgba(173, 198, 255, 0.2);
-  box-shadow: 0 0 14px rgba(173, 198, 255, 0.15);
+  border: none;
 }
 
 /* ── Icon button group ───────────────────────────── */
@@ -122,7 +139,7 @@
   align-items: center;
   gap: 4px;
   padding-left: 12px;
-  border-left: 1px solid rgba(255, 255, 255, 0.08);
+  border-left: 1px solid var(--border-default);
 }
 
 .topbar-icon-btn {
@@ -134,7 +151,7 @@
   justify-content: center;
   background: transparent;
   border: none;
-  color: #9CA3AF;
+  color: var(--text-secondary);
   cursor: pointer;
   transition: background 0.15s ease, color 0.15s ease;
   position: relative;
@@ -142,11 +159,62 @@
 
 .topbar-icon-btn:hover {
   background: rgba(255, 255, 255, 0.06);
-  color: #dfe2f1;
+  color: var(--text-primary);
 }
 
 .topbar-icon-btn .material-symbols-outlined {
   font-size: 20px !important;
+}
+
+.notification-dot {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 8px;
+  height: 8px;
+  background-color: var(--danger);
+  border-radius: 50%;
+  border: 2px solid var(--bg-base);
+}
+
+/* ── Notifications Dropdown ──────────────────────── */
+.notifications-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  margin-top: 8px;
+  width: 300px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 8px;
+  padding: 12px;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.5);
+  z-index: 100;
+}
+
+.notifications-dropdown h4 {
+  font-size: 14px;
+  margin-bottom: 12px;
+  color: var(--text-primary);
+}
+
+.notification-item {
+  display: flex;
+  gap: 12px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--border-default);
+}
+.notification-item:last-child {
+  border-bottom: none;
+}
+.notification-item p {
+  font-size: 13px;
+  color: var(--text-primary);
+  margin-bottom: 2px;
+}
+.notification-item small {
+  font-size: 11px;
+  color: var(--text-muted);
 }
 
 /* ── Avatar ──────────────────────────────────────── */
@@ -154,14 +222,14 @@
   width: 34px;
   height: 34px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #adc6ff, #4cd7f6);
+  background: linear-gradient(135deg, var(--accent-blue), var(--accent-cyan));
   padding: 1px;
   cursor: pointer;
   overflow: hidden;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #002e6a;
+  color: #fff;
   margin-left: 4px;
 }
 
@@ -170,22 +238,50 @@
   font-variation-settings: 'FILL' 1;
 }
 
-/* ── Mobile: hide search + repo on small screens ─── */
-@media (max-width: 768px) {
-  .topbar-search,
+/* ── Mobile Layout ───────────────────────────────── */
+@media (max-width: 767px) {
+  .app-topbar {
+    padding: 0 16px;
+  }
+  .topbar-hamburger {
+    display: block;
+  }
+  .topbar-tabs {
+    flex: 1;
+    overflow-x: auto;
+    scrollbar-width: none; /* Firefox */
+  }
+  .topbar-tabs::-webkit-scrollbar {
+    display: none; /* Chrome */
+  }
+  
   .topbar-repo-badge {
     display: none;
   }
-}
-
-@media (max-width: 600px) {
-  .topbar-tabs {
-    gap: 0;
+  
+  .topbar-search-input {
+    display: none; /* Hide full input on mobile initially */
   }
-  .topbar-tab {
-    padding: 0 12px;
-    font-size: 12px;
+  .topbar-search-icon {
+    position: static;
+    cursor: pointer;
+    pointer-events: auto;
   }
+  
+  /* Expand search full width on mobile */
+  .topbar-search--mobile-open {
+    position: absolute;
+    inset: 0;
+    background: var(--bg-base);
+    z-index: 40;
+    padding: 0 16px;
+  }
+  .topbar-search--mobile-open .topbar-search-input {
+    display: block;
+    width: 100%;
+    margin-left: 12px;
+  }
+  
   .topbar-deploy-btn {
     padding: 6px 12px;
     font-size: 12px;

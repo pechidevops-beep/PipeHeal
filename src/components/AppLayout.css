@@ -68,10 +68,23 @@
   height: 100vh;
 }
 
-/* ── Mobile: hide sidebar, show bottom nav ───────── */
-@media (max-width: 768px) {
+/* ── Tablet: Collapse Sidebar to icon-only (768px - 1279px) ───────── */
+@media (min-width: 768px) and (max-width: 1279px) {
   .app-sidebar {
-    display: none;
+    width: 80px;
+  }
+  .app-content {
+    margin-left: 80px;
+  }
+}
+
+/* ── Mobile: hide sidebar (drawer mode handled in Sidebar.css) ───────── */
+@media (max-width: 767px) {
+  .app-sidebar {
+    /* Initially hidden, will be overridden by .sidebar-open class in Sidebar.css */
+    transform: translateX(-100%);
+    width: 280px;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   }
 
   .app-content {
@@ -79,6 +92,6 @@
   }
 
   .app-main {
-    padding: 20px 16px 80px; /* bottom padding for mobile nav */
+    padding: 20px 16px 24px;
   }
 }

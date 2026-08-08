@@ -14,11 +14,13 @@ router.post(
   asyncHandler(webhookController.githubWebhook)
 );
 
+import authController from '../controllers/auth.controller.js';
+
 /**
  * GET /api/v1/github/callback
  * GitHub redirects here after OAuth authorization.
  * Passes the code to the frontend which exchanges it via POST /auth/login.
  */
-router.get('/callback', asyncHandler(webhookController.githubOAuthCallback));
+router.get('/callback', asyncHandler(authController.githubCallback));
 
 export default router;

@@ -40,7 +40,7 @@ export default function SettingsPage() {
               <h2>AI Providers</h2>
               <p className="settings-description">Manage API keys for the language models that power Auto-Fix.</p>
               
-              <div className="settings-card">
+              <div className="settings-card premium-card">
                 <div className="settings-card-header">
                   <div className="provider-logo gemini">G</div>
                   <div>
@@ -55,10 +55,10 @@ export default function SettingsPage() {
                     value={geminiKey}
                     onChange={(e) => setGeminiKey(e.target.value)}
                     placeholder="AIzaSy..."
-                    className="settings-input"
+                    className="premium-input w-full"
                   />
                 </div>
-                <button className="settings-btn-primary">Save Key</button>
+                <button className="premium-button" style={{ marginTop: '16px' }}>Save Key</button>
               </div>
             </div>
           )}
@@ -68,7 +68,7 @@ export default function SettingsPage() {
               <h2>Notifications</h2>
               <p className="settings-description">Configure where PipeHeal sends alerts when pipelines fail or patches are generated.</p>
               
-              <div className="settings-card">
+              <div className="settings-card premium-card">
                 <div className="settings-card-header">
                   <div className="provider-logo slack">S</div>
                   <div>
@@ -81,10 +81,10 @@ export default function SettingsPage() {
                   <input 
                     type="url" 
                     placeholder="https://hooks.slack.com/services/..."
-                    className="settings-input"
+                    className="premium-input w-full"
                   />
                 </div>
-                <button className="settings-btn-primary">Connect Slack</button>
+                <button className="premium-button" style={{ marginTop: '16px' }}>Connect Slack</button>
               </div>
             </div>
           )}

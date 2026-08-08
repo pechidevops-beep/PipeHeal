@@ -133,22 +133,22 @@ function ConnectModal({ onClose, githubRepos, githubLoading, onFetch, onConnect,
 
 function WebhookBadge({ active, webhookId }) {
   if (!webhookId) {
-    return <span className="badge badge--muted">No Webhook</span>;
+    return <span className="pill pill-muted">No Webhook</span>;
   }
   return active
-    ? <span className="badge badge--green">Active</span>
-    : <span className="badge badge--amber">Inactive</span>;
+    ? <span className="pill pill-green">Active</span>
+    : <span className="pill pill-amber">Inactive</span>;
 }
 
 function VisibilityBadge({ isPrivate }) {
   return isPrivate
-    ? <span className="badge badge--purple">Private</span>
-    : <span className="badge badge--blue">Public</span>;
+    ? <span className="pill pill-purple">Private</span>
+    : <span className="pill pill-blue">Public</span>;
 }
 
 function PipelineStatusBadge({ count }) {
-  if (!count || count === 0) return <span className="badge badge--muted">No Runs</span>;
-  return <span className="badge badge--cyan">{count} runs</span>;
+  if (!count || count === 0) return <span className="pill pill-muted">No Runs</span>;
+  return <span className="pill pill-cyan">{count} runs</span>;
 }
 
 // ── Main Page ────────────────────────────────────────────────────────────────
@@ -264,7 +264,7 @@ export default function RepositoriesPage() {
             <span className="material-symbols-outlined">refresh</span>
             Refresh
           </button>
-          <button className="btn-primary" onClick={handleOpenModal}>
+          <button className="premium-button" onClick={handleOpenModal}>
             <span className="material-symbols-outlined">add_link</span>
             Connect GitHub
           </button>
@@ -300,7 +300,7 @@ export default function RepositoriesPage() {
       {filtered.length === 0 ? (
         <div className="repos-empty">
           <div className="repos-empty-icon">
-            <span className="material-symbols-outlined">source</span>
+            <span className="material-symbols-outlined empty-icon-float">source</span>
           </div>
           <h3 className="repos-empty-title">
             {repositories.length === 0 ? 'No repositories connected yet' : 'No matching repositories'}
@@ -311,7 +311,7 @@ export default function RepositoriesPage() {
               : 'Try adjusting your search or filter criteria.'}
           </p>
           {repositories.length === 0 && (
-            <button className="btn-primary" onClick={handleOpenModal}>
+            <button className="premium-button" onClick={handleOpenModal}>
               <span className="material-symbols-outlined">add_link</span>
               Connect GitHub Repository
             </button>
@@ -362,7 +362,7 @@ export default function RepositoriesPage() {
 
                   {/* Language */}
                   <div className="col-language">
-                    <span className="badge badge--muted">{repo.language || 'N/A'}</span>
+                    <span className="pill pill-muted">{repo.language || 'N/A'}</span>
                   </div>
 
                   {/* Visibility */}
@@ -383,9 +383,9 @@ export default function RepositoriesPage() {
                   {/* Incidents count */}
                   <div className="col-incident">
                     {repo._count?.incidents > 0 ? (
-                      <span className="badge badge--amber">{repo._count?.incidents} alerts</span>
+                      <span className="pill pill-amber">{repo._count?.incidents} alerts</span>
                     ) : (
-                      <span className="badge badge--muted">None</span>
+                      <span className="pill pill-muted">None</span>
                     )}
                   </div>
 

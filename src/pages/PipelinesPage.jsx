@@ -271,7 +271,7 @@ export default function PipelinesPage() {
       {runs.length === 0 && (
         <div className="pipelines-empty">
           <div className="repos-empty-icon">
-            <span className="material-symbols-outlined">schema</span>
+            <span className="material-symbols-outlined empty-icon-float">schema</span>
           </div>
           <h3 className="repos-empty-title">No pipeline runs yet</h3>
           <p className="repos-empty-desc">

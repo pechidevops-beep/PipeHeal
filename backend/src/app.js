@@ -23,6 +23,9 @@ app.use(compression()); // Compress response bodies
 // The raw body is captured via the verify option in express.json() below.
 
 // ── Standard Body Parsers ───────────────────────────────────────────────────
+import cookieParser from 'cookie-parser';
+app.use(cookieParser());
+
 app.use(express.json({
   verify: (req, res, buf) => {
     if (req.originalUrl.includes('/api/v1/github/webhook')) {

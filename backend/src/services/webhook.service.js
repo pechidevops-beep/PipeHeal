@@ -178,19 +178,24 @@ export const webhookService = {
       if (run.conclusion === 'failure' || run.conclusion === 'timed_out') {
         const parsedLogData = parseFailedLogs(rawLogs, jobsData);
         
-        // Create an incident
-        const incidentData = {
-          title: `Pipeline Failed: ${run.name}`,
-          description: `Failed at ${parsedLogData.errorMessage}`,
-          severity: 'HIGH',
-          status: 'DIAGNOSING',
-          errorCategory: parsedLogData.errorType,
-          errorMessage: parsedLogData.errorMessage,
-          repositoryId: dbRepo.id,
-          workflowRunId: dbRun.id,
-        };
+        const existingIncident = await db.incident.findFirst({
+          where: { workflowRunId: dbRun.id }
+        });
 
-        const incident = await incidentService.createIncident(incidentData, null);
+        if (!existingIncident) {
+          // Create an incident
+          const incidentData = {
+            title: `Pipeline Failed: ${run.name}`,
+            description: `Failed at ${parsedLogData.errorMessage}`,
+            severity: 'HIGH',
+            status: 'DIAGNOSING',
+            errorCategory: parsedLogData.errorType,
+            errorMessage: parsedLogData.errorMessage,
+            repositoryId: dbRepo.id,
+            workflowRunId: dbRun.id,
+          };
+  
+          const incident = await incidentService.createIncident(incidentData, null);
 
         // Emit new incident
         emitToAll(SOCKET_NAMESPACES.INCIDENTS, 'incident_created', incident);
@@ -249,6 +254,7 @@ export const webhookService = {
             logger.error(`[Webhook] AI diagnosis failed: ${err.message}`);
             incidentService.updateIncident(incident.id, { status: 'OPEN' }, null);
           });
+        }
         }
 
       } else {
