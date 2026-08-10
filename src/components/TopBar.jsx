@@ -138,7 +138,10 @@ export default function TopBar({ onMenuClick }) {
           ) : (
             <button 
               className="topbar-deploy-btn premium-button" 
-              onClick={() => window.location.href = 'http://localhost:3001/api/v1/auth/github'}
+              onClick={() => {
+                const apiUrl = import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1';
+                window.location.href = `${apiUrl}/auth/github`;
+              }}
             >
               Login
             </button>
