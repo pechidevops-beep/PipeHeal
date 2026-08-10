@@ -76,7 +76,7 @@ function ConnectModal({ onClose, githubRepos, githubLoading, onFetch, onConnect,
               <button 
                 className="btn-primary" 
                 style={{ marginTop: '16px' }}
-                onClick={() => window.location.href = 'http://localhost:3001/api/v1/auth/github'}
+                onClick={() => window.location.href = `${import.meta.env.VITE_API_URL || 'http://localhost:3001/api/v1'}/auth/github`}
               >
                 Login with GitHub
               </button>

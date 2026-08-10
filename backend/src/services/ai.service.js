@@ -66,7 +66,7 @@ You MUST return ONLY a raw JSON object with the following schema, and absolutely
 
   async callGemini(prompt, systemPrompt) {
     if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`;
     
     const body = {
       system_instruction: { parts: [{ text: systemPrompt || this.getSystemPrompt() }] },

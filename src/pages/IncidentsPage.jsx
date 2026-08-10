@@ -132,7 +132,7 @@ function getStatusIcon(s) {
 // ── Main Page ─────────────────────────────────────────────────────────────────
 
 export default function IncidentsPage() {
-  const { incidents, loading, error, diagnose, generatePatch, createPR, refetch } = useIncidents();
+  const { incidents, loading, error, diagnose, generateFix, generatePatch, createPR, refetch } = useIncidents();
   const [selectedId, setSelectedId] = useState(null);
   const [incidentDetail, setIncidentDetail] = useState(null);
   const [detailLoading, setDetailLoading] = useState(false);
@@ -172,17 +172,21 @@ export default function IncidentsPage() {
     try {
       if (action === 'diagnose') {
         await diagnose(incidentDetail.workflowRunId);
+        // AI diagnosis is async on the backend — wait 3s for it to complete before re-fetching
+        await new Promise(r => setTimeout(r, 3000));
       } else if (action === 'patch') {
-        await generatePatch(incidentDetail.id);
+        // Use generateFix (simple patch-only endpoint) not the full PR flow
+        const latestDiagnosisId = incidentDetail.diagnoses?.[0]?.id;
+        await generateFix(incidentDetail.id, latestDiagnosisId);
       } else if (action === 'sandbox') {
         await api.runSandbox(incidentDetail.id, null);
       }
-      // Refetch updated detail
+      // Refetch updated detail after any action
       const res = await api.getIncident(selectedId);
       setIncidentDetail(res?.data ?? null);
       refetch();
     } catch (err) {
-      console.error(err);
+      console.error('Action failed:', err);
     } finally {
       setActionLoading(false);
     }
@@ -496,14 +500,14 @@ export default function IncidentsPage() {
                       {actionLoading ? 'Running...' : 'Diagnose'}
                     </button>
                   )}
-                  {incidentDetail.status === 'OPEN' && incidentDetail.diagnoses?.length > 0 && (
+                  {(incidentDetail.status === 'OPEN' || incidentDetail.status === 'DIAGNOSING') && incidentDetail.diagnoses?.length > 0 && (
                     <button
                       className="inc-action-btn inc-action-btn--primary"
                       onClick={() => handleAction('patch')}
                       disabled={actionLoading}
                     >
                       <span className="material-symbols-outlined">code</span>
-                      {actionLoading ? 'Running...' : 'Generate Patch'}
+                      {actionLoading ? 'Generating...' : 'Generate Patch'}
                     </button>
                   )}
                   {incidentDetail.status === 'PATCH_GENERATED' && (

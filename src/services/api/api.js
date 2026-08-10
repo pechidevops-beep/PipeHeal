@@ -23,6 +23,7 @@ export const api = {
 
   // ── Diagnosis & Patches ────────────────────────────────────────────────────
   diagnoseIncident: (workflowRunId) => apiClient.post('/diagnosis', { workflowRunId }),
+  generateFix: (incidentId, diagnosisId) => apiClient.post('/diagnosis/patch', { incidentId, diagnosisId }),
   generatePatch: (incidentId) => apiClient.post(`/incidents/${incidentId}/patch`, { }),
   getKnowledgeBase: (repositoryId, page = 1, limit = 20) => apiClient.get(`/knowledge-base?repositoryId=${repositoryId}&page=${page}&limit=${limit}`),
 

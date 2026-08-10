@@ -46,6 +46,11 @@ export const useIncidents = () => {
     return res?.data;
   };
 
+  const generateFix = async (incidentId, diagnosisId) => {
+    const res = await api.generateFix(incidentId, diagnosisId);
+    return res?.data;
+  };
+
   const generatePatch = async (incidentId) => {
     const res = await api.generatePatch(incidentId);
     return res?.data;
@@ -63,6 +68,7 @@ export const useIncidents = () => {
     error: error?.message || null,
     refetch,
     diagnose,
+    generateFix,
     generatePatch,
     createPR,
   };

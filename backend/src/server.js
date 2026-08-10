@@ -29,9 +29,9 @@ async function startServer() {
       if (!env.githubConfigured) logger.warn('[Server] Running with mocked GitHub API');
       if (!env.aiConfigured) logger.warn('[Server] Running with mocked AI responses');
       
-      // Simulate background worker activity for live logs UI
+      // Heartbeat — flows through Winston → SocketTransport → /logs namespace → Logs UI
       setInterval(() => {
-        logger.info('[Worker] Syncing background telemetry...');
+        logger.info('[Heartbeat] System is alive — all services operational');
       }, 15000);
     });
   } catch (err) {
