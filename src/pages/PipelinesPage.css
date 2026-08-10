@@ -303,7 +303,7 @@
 .repos-empty-desc { font-size: 14px; color: #9CA3AF; max-width: 420px; line-height: 1.6; }
 
 /* ── Skeleton ────────────────────────────────────── */
-.skeleton { background: rgba(255,255,255,0.04); border-radius: 8px; animation: shimmer 1.5s ease-in-out infinite; }
+/* .skeleton removed, using global index.css */
 .skeleton--title { height: 44px; width: 260px; }
 .skeleton--btn   { height: 38px; width: 120px; }
 .skeleton--hero  { height: 200px; }

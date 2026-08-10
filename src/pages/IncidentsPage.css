@@ -486,7 +486,7 @@
 .inc-btn-primary .material-symbols-outlined { font-size: 16px !important; }
 
 /* ── Shared skeleton/error ───────────────────────── */
-.skeleton { background: rgba(255,255,255,0.04); border-radius: 8px; animation: shimmer 1.5s ease-in-out infinite; }
+/* .skeleton removed, using global index.css */
 .inc-skeleton-layout { display: flex; gap: 16px; height: 600px; }
 .inc-skeleton-panel { width: 320px; flex-shrink: 0; }
 .inc-skeleton-detail { flex: 1; }
@@ -496,3 +496,54 @@
 
 .spin-icon { animation: spin-anim 1s linear infinite; }
 @keyframes spin-anim { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+
+/* ── Recovery Moment ──────────────────────────────── */
+.recovery-moment {
+  position: relative;
+  background: rgba(0, 230, 118, 0.05);
+  border: 1px solid rgba(0, 230, 118, 0.2);
+  border-radius: 8px;
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 24px;
+  overflow: hidden;
+}
+
+.recovery-moment-bg {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(circle at center, rgba(0, 230, 118, 0.15) 0%, transparent 70%);
+  pointer-events: none;
+  animation: pulse-glow 3s infinite;
+}
+
+.recovery-pulse {
+  width: 200px;
+  height: 40px;
+  margin-bottom: 16px;
+}
+
+.recovery-text {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--success);
+  font-family: 'Space Grotesk', sans-serif;
+  font-weight: 600;
+  font-size: 18px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+}
+
+.active-incident-pulse {
+  margin-bottom: 24px;
+  opacity: 0.8;
+}
+
+.inc-patch-diff-wrapper {
+  margin-top: 12px;
+}
+

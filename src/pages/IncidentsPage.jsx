@@ -2,6 +2,9 @@ import { useState, useEffect } from 'react';
 import { useIncidents } from '../hooks/useIncidents';
 import { api } from '../services/api/api';
 import { formatDistanceToNow } from 'date-fns';
+import { motion, AnimatePresence } from 'framer-motion';
+import DiffViewer from '../components/DiffViewer';
+import HeartbeatLoader from '../components/HeartbeatLoader';
 import './IncidentsPage.css';
 
 // ── PR Modal ──────────────────────────────────────────────────────────────────
@@ -70,9 +73,7 @@ function PRModal({ incident, onClose, onSubmit }) {
                 <span className="material-symbols-outlined">code</span>
                 Patch — {latestPatch.filePath}
               </h4>
-              <div className="inc-diff-box">
-                <pre className="inc-diff-content">{latestPatch.diff || latestPatch.description}</pre>
-              </div>
+              <DiffViewer diffString={latestPatch.diff} description={latestPatch.description} />
             </div>
           )}
 
@@ -190,9 +191,22 @@ export default function IncidentsPage() {
   if (loading && incidents.length === 0) {
     return (
       <div className="incidents-page">
-        <div className="inc-skeleton-layout">
-          <div className="skeleton inc-skeleton-panel" />
-          <div className="skeleton inc-skeleton-detail" />
+        <div className="page-header" style={{ marginBottom: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '30%' }}>
+            <div className="skeleton" style={{ height: '48px', width: '100%' }} />
+            <div className="skeleton" style={{ height: '20px', width: '60%' }} />
+          </div>
+        </div>
+        <div style={{ display: 'flex', gap: '20px', height: '600px' }}>
+          {/* List Panel */}
+          <div style={{ width: '340px', display: 'flex', flexDirection: 'column', gap: '12px', flexShrink: 0 }}>
+            <div className="skeleton" style={{ height: '44px', borderRadius: '8px' }} />
+            {[1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="skeleton" style={{ height: '100px', borderRadius: '12px' }} />
+            ))}
+          </div>
+          {/* Detail Panel */}
+          <div className="skeleton" style={{ flex: 1, borderRadius: '16px' }} />
         </div>
       </div>
     );
@@ -270,8 +284,8 @@ export default function IncidentsPage() {
         <div className="inc-detail-panel">
           {detailLoading ? (
             <div className="inc-detail-loading">
-              <span className="material-symbols-outlined spin-icon">sync</span>
-              Loading incident details...
+              <HeartbeatLoader status="loading" />
+              <div style={{ color: 'var(--text-muted)' }}>Retrieving incident forensics...</div>
             </div>
           ) : !incidentDetail ? (
             <div className="inc-detail-empty">
@@ -279,7 +293,28 @@ export default function IncidentsPage() {
               Select an incident to view details
             </div>
           ) : (
-            <>
+            <div className="inc-detail-content">
+              {/* ── RECOVERY MOMENT ── */}
+              {incidentDetail.status === 'RESOLVED' ? (
+                <motion.div 
+                  className="recovery-moment"
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.5 }}
+                >
+                  <div className="recovery-moment-bg" />
+                  <HeartbeatLoader status="stable" className="recovery-pulse" />
+                  <div className="recovery-text">
+                    <span className="material-symbols-outlined">health_and_safety</span>
+                    System Healed
+                  </div>
+                </motion.div>
+              ) : (
+                <div className="active-incident-pulse">
+                  <HeartbeatLoader status="alert" />
+                </div>
+              )}
+
               {/* Detail header */}
               <div className="inc-detail-header">
                 <div className="inc-detail-header-inner">
@@ -384,13 +419,14 @@ export default function IncidentsPage() {
                       <span className="material-symbols-outlined">build</span>
                       AI-Generated Patch
                     </h4>
-                    <div className="inc-diff-box">
+                    <div className="inc-patch-diff-wrapper">
                       <div className="inc-diff-header">
                         <span className="inc-mono">{incidentDetail.patches[0].filePath}</span>
                       </div>
-                      <pre className="inc-diff-content">
-                        {incidentDetail.patches[0].diff || incidentDetail.patches[0].description}
-                      </pre>
+                      <DiffViewer 
+                        diffString={incidentDetail.patches[0].diff} 
+                        description={incidentDetail.patches[0].description} 
+                      />
                     </div>
                   </div>
                 )}
@@ -492,7 +528,7 @@ export default function IncidentsPage() {
                   )}
                 </div>
               </div>
-            </>
+            </div>
           )}
         </div>
       </div>

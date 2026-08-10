@@ -28,6 +28,11 @@ async function startServer() {
       if (!env.dbConfigured) logger.warn('[Server] Running in gracefully degraded state (No DB)');
       if (!env.githubConfigured) logger.warn('[Server] Running with mocked GitHub API');
       if (!env.aiConfigured) logger.warn('[Server] Running with mocked AI responses');
+      
+      // Simulate background worker activity for live logs UI
+      setInterval(() => {
+        logger.info('[Worker] Syncing background telemetry...');
+      }, 15000);
     });
   } catch (err) {
     logger.error(`[Server] Failed to start: ${err.message}`);
@@ -39,6 +44,11 @@ async function startServer() {
 function gracefulShutdown(signal) {
   logger.info(`\n[Server] Received ${signal}. Shutting down gracefully...`);
   
+  // Force close active connections (e.g. Server-Sent Events, WebSockets) so close() finishes
+  if (httpServer.closeAllConnections) {
+    httpServer.closeAllConnections();
+  }
+
   httpServer.close(async () => {
     logger.info('[Server] HTTP server closed.');
     await disconnectDatabase();
@@ -72,4 +82,4 @@ process.on('unhandledRejection', (reason, promise) => {
 });
 
 startServer();
-
+ 

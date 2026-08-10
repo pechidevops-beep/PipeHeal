@@ -1,0 +1,50 @@
+.diff-viewer-container {
+  background-color: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  border-radius: 4px;
+  overflow: hidden;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.diff-viewer-body {
+  padding: 12px 0;
+  overflow-x: auto;
+}
+
+.diff-line {
+  padding: 0 16px;
+  white-space: pre;
+  min-height: 20px;
+}
+
+.diff-add {
+  background-color: rgba(0, 230, 118, 0.1);
+  color: var(--success);
+}
+
+.diff-del {
+  background-color: rgba(255, 82, 82, 0.1);
+  color: var(--danger);
+  /* The fading animation is handled by framer-motion in JS */
+}
+
+.diff-hunk {
+  color: var(--accent-cyan); /* Or text-secondary */
+  opacity: 0.8;
+}
+
+.diff-header {
+  color: var(--text-muted);
+}
+
+.diff-ctx {
+  color: var(--text-secondary);
+}
+
+.patch-fallback {
+  padding: 16px;
+  color: var(--text-muted);
+  font-style: italic;
+}

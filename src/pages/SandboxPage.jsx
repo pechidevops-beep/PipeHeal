@@ -1,54 +1,9 @@
 import { useState, useMemo } from 'react';
 import { useSandbox } from '../hooks/useSandbox';
 import { formatDistanceToNow } from 'date-fns';
+import DiffViewer from '../components/DiffViewer';
+import HeartbeatLoader from '../components/HeartbeatLoader';
 import './SandboxPage.css';
-
-// ── Diff viewer ───────────────────────────────────────────────────────────────
-
-function DiffLine({ line }) {
-  const isAdd = line.startsWith('+') && !line.startsWith('+++');
-  const isDel = line.startsWith('-') && !line.startsWith('---');
-  const isHunk = line.startsWith('@@');
-  const isHeader = line.startsWith('+++') || line.startsWith('---');
-
-  const cls = isAdd ? 'diff-add'
-    : isDel ? 'diff-del'
-      : isHunk ? 'diff-hunk'
-        : isHeader ? 'diff-header'
-          : 'diff-ctx';
-
-  return <div className={`diff-line ${cls}`}>{line}</div>;
-}
-
-function PatchDiff({ patch }) {
-  if (!patch) {
-    return (
-      <div className="sandbox-empty-diff">
-        <span className="material-symbols-outlined">code_off</span>
-        No patch generated yet
-      </div>
-    );
-  }
-
-  const diff = patch.diff || '';
-  const lines = diff.split('\n');
-
-  return (
-    <div className="patch-diff-viewer">
-      <div className="patch-diff-header">
-        <span className="material-symbols-outlined">difference</span>
-        {patch.filePath}
-        {patch.description && <span className="patch-desc">{patch.description}</span>}
-      </div>
-      <div className="patch-diff-body">
-        {lines.length > 0 && diff
-          ? lines.map((l, i) => <DiffLine key={i} line={l} />)
-          : <p className="patch-fallback">{patch.description || 'No diff content'}</p>
-        }
-      </div>
-    </div>
-  );
-}
 
 // ── Timeline ──────────────────────────────────────────────────────────────────
 
@@ -148,10 +103,9 @@ export default function SandboxPage() {
   if (loading && runs.length === 0) {
     return (
       <div className="sandbox-page">
-        <div className="skeleton sandbox-skeleton-title" />
-        <div className="sandbox-two-col">
-          <div className="skeleton sandbox-skeleton-left" />
-          <div className="skeleton sandbox-skeleton-right" />
+        <div className="sandbox-loading">
+          <HeartbeatLoader status="loading" />
+          <div style={{ color: 'var(--text-muted)' }}>Connecting to sandbox env...</div>
         </div>
       </div>
     );
@@ -211,13 +165,13 @@ export default function SandboxPage() {
       {/* Empty state */}
       {runs.length === 0 ? (
         <div className="sandbox-empty">
-          <div className="sandbox-empty-icon">
-            <span className="material-symbols-outlined">science</span>
+          <div className="sandbox-empty-state">
+            <div className="vitals-monitor-empty">
+              <span className="material-symbols-outlined" style={{ fontSize: '48px', color: 'var(--text-muted)' }}>monitor_heart</span>
+            </div>
+            <h3>Waiting for signal</h3>
+            <p>Select a sandbox run from the sidebar to monitor the verification process.</p>
           </div>
-          <h3 className="sandbox-empty-title">No sandbox runs yet</h3>
-          <p className="sandbox-empty-desc">
-            After AI generates a patch for an incident, click "Verify in Sandbox" to test it here.
-          </p>
         </div>
       ) : (
         <div className="sandbox-two-col">
@@ -288,7 +242,14 @@ export default function SandboxPage() {
                 </div>
               </div>
               <div className="diff-panel-body">
-                <PatchDiff patch={latestPatch} />
+                {latestPatch ? (
+                  <DiffViewer diffString={latestPatch.diff} description={latestPatch.description} />
+                ) : (
+                  <div className="sandbox-empty-diff">
+                    <span className="material-symbols-outlined">difference</span>
+                    <p>Select a patch to view changes</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>

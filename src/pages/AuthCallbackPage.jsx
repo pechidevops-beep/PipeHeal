@@ -54,7 +54,7 @@ export default function AuthCallbackPage() {
           <span className="material-symbols-outlined" style={{ fontSize: 48, color: '#F43F5E' }}>error</span>
           <h2 style={{ fontSize: 22, fontWeight: 700, margin: 0 }}>Authentication Failed</h2>
           <p style={{ color: '#9CA3AF', margin: 0 }}>{error}</p>
-          <p style={{ color: '#9CA3AF', fontSize: 13 }}>Redirecting back to dashboard...</p>
+          <p style={{ color: '#9CA3AF', fontSize: 13 }}>Redirecting to login...</p>
         </>
       ) : (
         <>

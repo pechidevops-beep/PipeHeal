@@ -1,0 +1,120 @@
+.logs-container {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  border-radius: 0.75rem;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-default);
+  overflow: hidden;
+}
+
+.logs-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.5rem;
+  border-bottom: 1px solid var(--border-default);
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.logs-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.logs-search {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  background: var(--bg-base);
+  border: 1px solid var(--border-default);
+  border-radius: 0.5rem;
+  padding: 0.4rem 0.75rem;
+  width: 240px;
+}
+
+.logs-search input {
+  background: transparent;
+  border: none;
+  outline: none;
+  color: var(--text-primary);
+  font-size: 13px;
+  width: 100%;
+}
+
+.logs-search input::placeholder {
+  color: var(--text-muted);
+}
+
+.log-stream-area {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  line-height: 1.6;
+  background: #0d1117; /* Slight terminal vibe */
+}
+
+/* Custom scrollbar for logs */
+.log-stream-area::-webkit-scrollbar {
+  width: 10px;
+}
+.log-stream-area::-webkit-scrollbar-track {
+  background: transparent;
+}
+.log-stream-area::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 5px;
+  border: 2px solid #0d1117;
+}
+
+.log-entry {
+  display: flex;
+  gap: 1rem;
+  padding: 0.2rem 0.5rem;
+  border-radius: 0.25rem;
+  word-break: break-all;
+}
+
+.log-entry:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.log-timestamp {
+  color: #6e7681;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.log-level {
+  width: 60px;
+  flex-shrink: 0;
+  font-weight: 600;
+  user-select: none;
+}
+
+.log-level.info { color: var(--accent-cyan); }
+.log-level.warn { color: #d2a8ff; }
+.log-level.error { color: var(--danger); }
+
+.log-service {
+  color: #8b949e;
+  width: 120px;
+  flex-shrink: 0;
+  user-select: none;
+}
+
+.log-message {
+  color: #c9d1d9;
+  flex: 1;
+}
+
+.log-message .highlight {
+  color: var(--accent-green);
+}
+
+.log-message .error-trace {
+  color: #ff7b72;
+}

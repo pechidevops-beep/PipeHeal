@@ -13,6 +13,7 @@ import webhookRoutes from './webhook.routes.js';
 import healthRoutes from './health.routes.js';
 import activityRoutes from './activity.routes.js';
 import knowledgeBaseRoutes from './knowledgeBase.routes.js';
+import settingsRoutes from './settings.routes.js';
 
 const router = Router();
 
@@ -30,5 +31,6 @@ router.use('/github', webhookRoutes);
 router.use('/health', healthRoutes);
 router.use('/activity', activityRoutes);
 router.use('/knowledge-base', knowledgeBaseRoutes);
+router.use('/settings', settingsRoutes);
 
 export default router;

@@ -205,12 +205,27 @@ export default function PipelinesPage() {
   if (loading && runs.length === 0) {
     return (
       <div className="pipelines-page">
-        <div className="pipelines-header-row skeleton-row">
-          <div className="skeleton skeleton--title" />
-          <div className="skeleton skeleton--btn" />
+        {/* Header */}
+        <div className="pipelines-header-row" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '24px' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '30%' }}>
+            <div className="skeleton" style={{ height: '48px', width: '100%' }} />
+            <div className="skeleton" style={{ height: '20px', width: '60%' }} />
+          </div>
+          <div className="skeleton" style={{ height: '40px', width: '120px', borderRadius: '8px' }} />
         </div>
-        <div className="skeleton skeleton--hero" />
-        <div className="skeleton skeleton--list" />
+
+        {/* Filters */}
+        <div style={{ display: 'flex', gap: '16px', marginBottom: '24px' }}>
+          <div className="skeleton" style={{ height: '40px', flex: 1, borderRadius: '8px' }} />
+          <div className="skeleton" style={{ height: '40px', width: '150px', borderRadius: '8px' }} />
+        </div>
+
+        {/* List Layout */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+          {[1, 2, 3, 4, 5].map(i => (
+            <div key={i} className="skeleton" style={{ height: '80px', borderRadius: '12px' }} />
+          ))}
+        </div>
       </div>
     );
   }

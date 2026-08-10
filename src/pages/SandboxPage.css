@@ -294,7 +294,7 @@
 .sandbox-empty-title { font-family: 'Geist', sans-serif; font-size: 20px; font-weight: 600; color: #F9FAFB; }
 .sandbox-empty-desc { font-size: 14px; color: #9CA3AF; max-width: 420px; line-height: 1.6; }
 
-.skeleton { background: rgba(255,255,255,0.04); border-radius: 8px; animation: shimmer 1.5s ease-in-out infinite; }
+/* .skeleton removed, using global index.css */
 .sandbox-skeleton-title { height: 44px; width: 300px; }
 .sandbox-skeleton-left { width: 380px; height: 500px; flex-shrink: 0; }
 .sandbox-skeleton-right { flex: 1; height: 500px; }

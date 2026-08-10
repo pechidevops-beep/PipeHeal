@@ -19,26 +19,28 @@ export function initSocketIO(httpServer) {
     pingTimeout: 60000,
   });
 
-  // Authentication Middleware
+  // Authentication Middleware — decode token if present but don't block
   io.use((socket, next) => {
     const token = socket.handshake.auth?.token;
-    if (!token) {
-      return next(new Error('Authentication error: No token provided'));
+    if (token) {
+      try {
+        const decoded = verifyAccessToken(token);
+        socket.user = decoded;
+      } catch (err) {
+        // Invalid token — still allow connection for public namespaces
+        socket.user = null;
+      }
+    } else {
+      socket.user = null;
     }
-    
-    try {
-      const decoded = verifyAccessToken(token);
-      socket.user = decoded;
-      next();
-    } catch (err) {
-      next(new Error('Authentication error: Invalid token'));
-    }
+    next();
   });
 
-  // Setup Namespaces
   const dashboardNamespace = io.of(SOCKET_NAMESPACES.DASHBOARD);
   const incidentsNamespace = io.of(SOCKET_NAMESPACES.INCIDENTS);
   const pipelinesNamespace = io.of(SOCKET_NAMESPACES.PIPELINES);
+  const logsNamespace = io.of('/logs');
+  const networkNamespace = io.of('/network');
 
   const setupNamespace = (namespace, name) => {
     namespace.use((socket, next) => {
@@ -63,6 +65,48 @@ export function initSocketIO(httpServer) {
   setupNamespace(dashboardNamespace, 'Dashboard');
   setupNamespace(incidentsNamespace, 'Incidents');
   setupNamespace(pipelinesNamespace, 'Pipelines');
+  setupNamespace(networkNamespace, 'Network');
+  
+  // Custom setup for network to broadcast metrics
+  networkNamespace.on('connection', (socket) => {
+    import('../middlewares/metrics.middleware.js').then(({ metricsEmitter, getMetrics }) => {
+      // Send immediate state
+      socket.emit('metrics_update', getMetrics());
+      
+      const listener = (metrics) => socket.emit('metrics_update', metrics);
+      metricsEmitter.on('update', listener);
+      
+      socket.on('disconnect', () => {
+        metricsEmitter.off('update', listener);
+      });
+    });
+  });
+  
+  // Custom setup for logs to broadcast Winston logs
+  logsNamespace.on('connection', (socket) => {
+    // Import logEmitter dynamically to avoid circular dependencies at top level
+    import('../utils/logger.js').then(({ logEmitter }) => {
+      const logListener = (info) => {
+        // Winston SocketTransport emits the info object directly
+        try {
+          const logData = typeof info === 'string' ? JSON.parse(info) : info;
+          socket.emit('new_log', {
+            level: logData.level,
+            message: logData.message || logData[Symbol.for('message')],
+            timestamp: logData.timestamp || new Date().toLocaleTimeString('en-US', { hour12: false }),
+            stack: logData.stack
+          });
+        } catch (e) {
+          // ignore parsing errors
+        }
+      };
+      
+      logEmitter.on('log', logListener);
+      socket.on('disconnect', () => {
+        logEmitter.off('log', logListener);
+      });
+    });
+  });
 
   logger.info('[Socket.IO] Server initialized with namespaces');
   return io;

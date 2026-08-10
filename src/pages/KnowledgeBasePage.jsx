@@ -1,14 +1,15 @@
 import { useState, useEffect } from 'react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { api } from '../services/api/api';
 import useRepositories from '../hooks/useRepositories';
 import { formatDistanceToNow } from 'date-fns';
+import DiffViewer from '../components/DiffViewer';
+import HeartbeatLoader from '../components/HeartbeatLoader';
 import './KnowledgeBasePage.css';
 
 export default function KnowledgeBasePage() {
   const { repositories, loading: reposLoading } = useRepositories();
   const [selectedRepoId, setSelectedRepoId] = useState('');
-  const [entries, setEntries] = useState([]);
-  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     if (repositories.length > 0 && !selectedRepoId) {
@@ -16,26 +17,22 @@ export default function KnowledgeBasePage() {
     }
   }, [repositories, selectedRepoId]);
 
-  useEffect(() => {
-    if (!selectedRepoId) return;
-    
-    const fetchEntries = async () => {
-      try {
-        setLoading(true);
-        const res = await api.getKnowledgeBase(selectedRepoId);
-        setEntries(res.data || []);
-      } catch (err) {
-        console.error('Failed to fetch knowledge base entries', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    
-    fetchEntries();
-  }, [selectedRepoId]);
+  const { data: entries = [], isLoading: loading, isFetching } = useQuery({
+    queryKey: ['knowledgeBase', selectedRepoId],
+    queryFn: async () => {
+      const res = await api.getKnowledgeBase(selectedRepoId);
+      return res.data || [];
+    },
+    enabled: !!selectedRepoId,
+    placeholderData: keepPreviousData,
+  });
 
   if (reposLoading) {
-    return <div className="kb-page"><div className="skeleton" style={{ height: '200px' }} /></div>;
+      <div className="kb-page">
+        <div className="kb-header-skeleton">
+          <HeartbeatLoader status="loading" />
+        </div>
+      </div>
   }
 
   return (
@@ -62,11 +59,11 @@ export default function KnowledgeBasePage() {
       </div>
 
       {loading ? (
-        <div className="skeleton" style={{ height: '300px' }} />
+        <div style={{ padding: '40px' }}><HeartbeatLoader status="loading" /></div>
       ) : entries.length === 0 ? (
         <div className="kb-empty">
-          <span className="material-symbols-outlined">menu_book</span>
-          <h3>Knowledge Base is empty</h3>
+          <HeartbeatLoader status="flatline" style={{ width: '100px', margin: '0 auto', opacity: 0.2 }} />
+          <h3>Memory Unlit</h3>
           <p>Once PipeHeal successfully generates and validates patches for this repository, it will memorize the solutions here to fix similar issues faster in the future.</p>
         </div>
       ) : (
@@ -81,10 +78,8 @@ export default function KnowledgeBasePage() {
                 <h4 className="kb-label">Diagnosed Root Cause:</h4>
                 <p className="kb-text">{entry.rootCause}</p>
                 
-                <h4 className="kb-label" style={{ marginTop: '16px' }}>Successful Patch Diff:</h4>
-                <pre className="kb-diff">
-                  <code>{entry.patchDiff}</code>
-                </pre>
+                <h4 className="kb-label" style={{ marginTop: '16px', marginBottom: '8px' }}>Successful Patch Diff:</h4>
+                <DiffViewer diffString={entry.patchDiff} />
               </div>
             </div>
           ))}

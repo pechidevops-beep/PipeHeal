@@ -33,6 +33,18 @@ export const api = {
   // ── Pull Requests ─────────────────────────────────────────────────────────
   createPullRequest: (incidentId, title, body, headBranch, baseBranch) =>
     apiClient.post('/pull-requests', { incidentId, title, body, headBranch, baseBranch }),
+
+  // ── Settings ──────────────────────────────────────────────────────────────
+  getProfile: () => apiClient.get('/settings/profile'),
+  updateProfile: (data) => apiClient.patch('/settings/profile', data),
+  updatePassword: (oldPassword, newPassword) => apiClient.patch('/settings/password', { oldPassword, newPassword }),
+  disconnectGithub: () => apiClient.delete('/settings/github'),
+  logoutAll: () => apiClient.post('/settings/logout-all'),
+  deleteAccount: () => apiClient.delete('/settings/account'),
+  testAiProvider: (provider, apiKey) => apiClient.post('/settings/ai-providers/test', { provider, apiKey }),
+  getNotifications: () => apiClient.get('/settings/notifications'),
+  updateNotifications: (data) => apiClient.patch('/settings/notifications', data),
+  getUsage: () => apiClient.get('/settings/usage'),
 };
 
 export default api;

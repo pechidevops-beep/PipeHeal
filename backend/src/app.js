@@ -7,6 +7,7 @@ import { env } from './config/env.js';
 import { requestLogger } from './middlewares/requestLogger.js';
 import { apiLimiter } from './middlewares/rateLimiter.js';
 import { errorHandler } from './middlewares/error.middleware.js';
+import { metricsMiddleware } from './middlewares/metrics.middleware.js';
 import routes from './routes/index.js';
 
 const app = express();
@@ -45,6 +46,7 @@ app.use(express.urlencoded({ extended: true }));
 
 // ── Logging & Rate Limiting ─────────────────────────────────────────────────
 app.use(requestLogger);
+app.use(metricsMiddleware);
 app.use('/api', apiLimiter);
 
 // ── Routes ──────────────────────────────────────────────────────────────────

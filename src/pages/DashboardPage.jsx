@@ -1,8 +1,10 @@
+import React from 'react';
 import ShaderBackground from '../components/ShaderBackground';
 import { useDashboard } from '../hooks/useDashboard';
 import { formatDistanceToNow } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion } from 'framer-motion';
 import NumberCounter from '../components/NumberCounter';
+import HeartbeatLoader from '../components/HeartbeatLoader';
 import './DashboardPage.css';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -18,12 +20,12 @@ export default function DashboardPage() {
   if (!user?.githubId) {
     return (
       <div className="dashboard-page flex flex-col items-center justify-center text-center p-8">
-        <span className="material-symbols-outlined text-6xl text-[var(--accent-blue)] mb-4">account_tree</span>
+        <span className="material-symbols-outlined text-6xl text-[var(--accent-green)] mb-4">account_tree</span>
         <h2 className="text-2xl font-bold text-white mb-2">Connect GitHub to continue</h2>
         <p className="text-[var(--text-secondary)] max-w-md mb-8">
           PipeHeal requires read-only access to your repositories and workflows to monitor and auto-remediate pipeline failures.
         </p>
-        <button onClick={handleConnectGithub} className="premium-button px-6 py-3 flex items-center gap-2 text-[14px]">
+        <button onClick={handleConnectGithub} className="premium-button px-6 py-3 flex items-center gap-2">
           <span className="material-symbols-outlined text-[18px]">add_link</span>
           Connect GitHub
         </button>
@@ -33,12 +35,9 @@ export default function DashboardPage() {
 
   if (loading && !stats) {
     return (
-      <div className="page-loading">
-        <div className="skeleton skeleton--title" />
-        <div className="skeleton skeleton--hero" />
-        <div className="metrics-grid">
-          {[1, 2, 3, 4].map(i => <div key={i} className="skeleton skeleton--card" />)}
-        </div>
+      <div className="dashboard-page page-loading">
+        <HeartbeatLoader status="loading" />
+        <div style={{ textAlign: 'center', color: 'var(--text-muted)' }}>Initializing Vitals Monitor...</div>
       </div>
     );
   }
@@ -56,7 +55,7 @@ export default function DashboardPage() {
       badgeClass: 'badge--green',
       icon: 'check_circle',
       iconClass: 'icon--green',
-      accentClass: 'accent--green',
+      sizeClass: 'metric-card--wide'
     },
     {
       title: 'Needs Attention',
@@ -66,35 +65,33 @@ export default function DashboardPage() {
       badgeClass: 'badge--amber',
       icon: 'warning',
       iconClass: 'icon--amber',
-      accentClass: 'accent--amber',
+      sizeClass: 'metric-card--wide'
     },
     {
       title: 'Auto Fixed Today',
       value: stats?.stats?.autoFixedToday?.toString() || '0',
       suffix: '',
       badge: 'Resolved automatically',
-      badgeClass: 'badge--cyan',
+      badgeClass: 'badge--green',
       icon: 'auto_fix',
-      iconClass: 'icon--cyan icon--pulse',
-      accentClass: 'accent--cyan',
-      glow: true,
+      iconClass: 'icon--green icon--pulse',
+      sizeClass: 'metric-card--normal'
     },
     {
       title: 'Success Rate',
       value: `${stats?.stats?.successRate || 0}%`,
       suffix: '',
       badge: 'Last 30 days',
-      badgeClass: 'badge--muted',
+      badgeClass: 'badge--neutral',
       icon: 'analytics',
-      iconClass: 'icon--rose',
-      accentClass: 'accent--rose',
+      iconClass: 'icon--green',
+      sizeClass: 'metric-card--normal'
     },
   ];
 
   const getActivityColor = (eventType) => {
     if (eventType?.includes('resolved') || eventType?.includes('completed')) return 'dot--green';
-    if (eventType?.includes('failed')) return 'dot--rose';
-    if (eventType?.includes('started')) return 'dot--cyan';
+    if (eventType?.includes('failed')) return 'dot--amber';
     return 'dot--muted';
   };
 
@@ -103,10 +100,10 @@ export default function DashboardPage() {
       {/* Page Header */}
       <div className="page-header">
         <div>
-          <h1 className="page-title">Observatory</h1>
+          <h1 className="page-title">Vitals</h1>
           <p className="page-subtitle">Real-time system health and autonomous interventions.</p>
         </div>
-        <button className="btn-deploy premium-button">Deploy</button>
+        <button className="premium-button">Deploy</button>
       </div>
 
       {/* Hero Status Card */}
@@ -114,12 +111,13 @@ export default function DashboardPage() {
         <div className="hero-shader">
           <ShaderBackground className="w-full h-full" />
         </div>
+        <div className="hero-heartbeat-bg">
+          <HeartbeatLoader status="loading" style={{ height: '300px', opacity: 0.2 }} />
+        </div>
         <div className="hero-content">
           <div className="hero-status-badge">
-            <span className="hero-status-dot">
-              <span className="hero-status-ping" />
-            </span>
-            System Status
+            <span className="hero-status-dot" />
+            System Status Stable
           </div>
           <h2 className="hero-headline">
             AI Monitoring{' '}
@@ -128,12 +126,12 @@ export default function DashboardPage() {
             </span>
           </h2>
           <p className="hero-description">
-            Autonomous healing agents are active across 4 clusters. Latency is optimal.
+            Autonomous healing agents are active across clusters. Latency is optimal.
           </p>
         </div>
       </section>
 
-      {/* Metric Cards */}
+      {/* Metric Cards - Asymmetric Grid */}
       <motion.section 
         className="metrics-grid"
         initial="hidden"
@@ -153,9 +151,8 @@ export default function DashboardPage() {
               hidden: { opacity: 0, y: 20 },
               visible: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
             }}
-            className={`metric-card premium-card premium-card--accent-edge premium-card--accent-${card.accentClass.split('--')[1]}${card.glow ? ' metric-card--glow' : ''}`}
+            className={`metric-card premium-card ${card.sizeClass}`}
           >
-            <div className={`metric-card-accent ${card.accentClass}`} />
             <div className="metric-card-header">
               <span className="metric-card-label section-label">{card.title}</span>
               <span className={`material-symbols-outlined metric-card-icon ${card.iconClass}`}>
@@ -208,23 +205,21 @@ export default function DashboardPage() {
           </div>
         </section>
 
-        {/* Cluster Health */}
+        {/* Cluster Health - Vitals Network */}
         <section className="cluster-panel">
           <div className="panel-header">
             <h3 className="panel-title">Cluster Health</h3>
           </div>
           <div className="panel-body cluster-body">
-            {/* Orbital visualization */}
-            <div className="orbital">
-              <div className="orbital-ring orbital-ring--outer" />
-              <div className="orbital-ring orbital-ring--inner" />
-              <div className="orbital-hub">
-                <span className="material-symbols-outlined" style={{ color: '#4cd7f6', fontSize: '22px' }}>hub</span>
+            {/* Vitals Network visualization */}
+            <div className="vitals-network">
+              <div className="network-orbit" />
+              <div className="network-hub">
+                <span className="material-symbols-outlined">vital_signs</span>
               </div>
-              <div className="orbital-node orbital-node--top" />
-              <div className="orbital-node orbital-node--bottom" />
-              <div className="orbital-node orbital-node--left orbital-node--pulse" />
-              <div className="orbital-node orbital-node--right" />
+              <div className="network-node network-node-1 network-node--healthy" />
+              <div className="network-node network-node-2 network-node--alert" />
+              <div className="network-node network-node-3 network-node--healthy" />
             </div>
 
             {/* Cluster bars */}
@@ -241,10 +236,10 @@ export default function DashboardPage() {
               <div className="cluster-bar-item">
                 <div className="cluster-bar-header">
                   <span className="cluster-bar-name">EU-Central</span>
-                  <span className="cluster-bar-value cluster-bar-value--cyan">Load Balancing</span>
+                  <span className="cluster-bar-value cluster-bar-value--amber">Degraded</span>
                 </div>
                 <div className="cluster-bar-track">
-                  <div className="cluster-bar-fill cluster-bar-fill--cyan cluster-bar-fill--pulse" style={{ width: '75%' }} />
+                  <div className="cluster-bar-fill cluster-bar-fill--amber cluster-bar-fill--pulse" style={{ width: '65%' }} />
                 </div>
               </div>
               <div className="cluster-bar-item">

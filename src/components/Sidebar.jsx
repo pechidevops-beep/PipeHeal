@@ -1,5 +1,8 @@
-import { NavLink } from 'react-router-dom';
+import { NavLink, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { useQueryClient } from '@tanstack/react-query';
+import { api } from '../services/api/api';
+import { useAuth } from '../contexts/AuthContext';
 import './Sidebar.css';
 
 const navItems = [
@@ -13,6 +16,32 @@ const navItems = [
 ];
 
 export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
+  const queryClient = useQueryClient();
+  const { logout } = useAuth();
+  const navigate = useNavigate();
+
+  const handlePrefetch = (path) => {
+    if (path === '/dashboard/pipelines') {
+      queryClient.prefetchQuery({ queryKey: ['pipelines'], queryFn: async () => {
+        const res = await api.getPipelines();
+        const items = Array.isArray(res?.data) ? res.data : [];
+        return { pipelines: items, total: res?.meta?.total ?? items.length };
+      }});
+    } else if (path === '/dashboard/incidents') {
+      queryClient.prefetchQuery({ queryKey: ['incidents'], queryFn: async () => {
+        const res = await api.getIncidents();
+        const list = Array.isArray(res?.data) ? res.data : [];
+        return { incidents: list, total: res?.meta?.total ?? list.length };
+      }});
+    } else if (path === '/dashboard/repositories') {
+      queryClient.prefetchQuery({ queryKey: ['repositories'], queryFn: async () => {
+        const res = await api.getRepositories();
+        const items = Array.isArray(res?.data) ? res.data : [];
+        return { repositories: items, total: res?.meta?.total ?? items.length };
+      }});
+    }
+  };
+
   return (
     <>
       {/* Mobile Backdrop */}
@@ -43,7 +72,12 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
         {/* Navigation */}
         <ul className="sidebar-nav">
           {navItems.map((item) => (
-            <li key={item.path} style={{ position: 'relative' }}>
+            <li 
+              key={item.path} 
+              style={{ position: 'relative' }} 
+              onMouseEnter={() => handlePrefetch(item.path)}
+              onFocus={() => handlePrefetch(item.path)}
+            >
               <NavLink
                 to={item.path}
                 end={item.exact}
@@ -109,9 +143,9 @@ export default function Sidebar({ isMobileMenuOpen, setIsMobileMenuOpen }) {
           </div>
           <button
             className="sidebar-link sidebar-logout-btn"
-            onClick={() => {
-              localStorage.removeItem('pipeheal_token');
-              window.location.href = '/';
+            onClick={async () => {
+              await logout();
+              navigate('/login', { replace: true });
             }}
           >
             <span className="material-symbols-outlined sidebar-link-icon">logout</span>

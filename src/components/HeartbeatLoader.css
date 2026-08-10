@@ -1,0 +1,44 @@
+.heartbeat-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 30px; /* Default height */
+  overflow: hidden;
+}
+
+.heartbeat-svg {
+  width: 100%;
+  height: 100%;
+  display: block;
+}
+
+.heartbeat-path {
+  stroke-dasharray: 200;
+  stroke-dashoffset: 200;
+  animation: pulse-travel 1.5s linear infinite;
+  filter: drop-shadow(0 0 6px currentColor);
+}
+
+@keyframes pulse-travel {
+  0% {
+    stroke-dashoffset: 200;
+  }
+  100% {
+    stroke-dashoffset: 0;
+  }
+}
+
+/* Pause travel animation when stable/flatline */
+.heartbeat-container.stable .heartbeat-path,
+.heartbeat-container.flatline .heartbeat-path {
+  animation: none;
+  stroke-dasharray: none;
+  stroke-dashoffset: 0;
+  filter: none;
+}
+
+/* Special styling for empty states with flatline */
+.heartbeat-container.flatline {
+  opacity: 0.3;
+}

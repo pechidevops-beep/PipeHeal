@@ -71,6 +71,12 @@ export const webhookService = {
 
     const run = payload.workflow_run;
 
+    // Ignore runs on PipeHeal's own auto-fix branches to prevent recursive loops
+    if (run.head_branch && run.head_branch.startsWith('pipeheal-fix-')) {
+      logger.info(`[Webhook] Ignoring workflow run on auto-fix branch: ${run.head_branch}`);
+      return;
+    }
+
     // Fetch jobs for this workflow to calculate duration and store them if needed
     let jobsData = [];
     let rawLogs = '';
@@ -178,84 +184,98 @@ export const webhookService = {
       if (run.conclusion === 'failure' || run.conclusion === 'timed_out') {
         const parsedLogData = parseFailedLogs(rawLogs, jobsData);
         
-        const existingIncident = await db.incident.findFirst({
-          where: { workflowRunId: dbRun.id }
-        });
+        let lockAcquired = false;
+        try {
+          // Use advisory lock to prevent duplicate incidents if GitHub sends duplicate events
+          const lockResult = await db.$queryRaw`SELECT pg_try_advisory_lock(hashtext(${dbRun.id})) as acquired`;
+          lockAcquired = lockResult?.[0]?.acquired;
 
-        if (!existingIncident) {
-          // Create an incident
-          const incidentData = {
-            title: `Pipeline Failed: ${run.name}`,
-            description: `Failed at ${parsedLogData.errorMessage}`,
-            severity: 'HIGH',
-            status: 'DIAGNOSING',
-            errorCategory: parsedLogData.errorType,
-            errorMessage: parsedLogData.errorMessage,
-            repositoryId: dbRepo.id,
-            workflowRunId: dbRun.id,
-          };
-  
-          const incident = await incidentService.createIncident(incidentData, null);
-
-        // Emit new incident
-        emitToAll(SOCKET_NAMESPACES.INCIDENTS, 'incident_created', incident);
-
-        // Async trigger AI
-        aiService.diagnoseFailure(parsedLogData).then(async (diagnosis) => {
-          await db.diagnosis.create({
-            data: {
-              rootCause: diagnosis.root_cause,
-              summary: diagnosis.summary,
-              failureType: diagnosis.failure_type,
-              suggestedFix: diagnosis.suggested_fix,
-              autoFixable: diagnosis.auto_fixable,
-              confidence: parseFloat(diagnosis.confidence) || 0.8,
-              aiModel: aiService.getProvider(),
-              rawResponse: diagnosis,
-              incidentId: incident.id,
-            }
-          });
-          
-          await incidentService.updateIncident(incident.id, { status: 'OPEN' }, null);
-            const updatedIncident = await incidentService.getIncident(incident.id);
-            emitToAll(SOCKET_NAMESPACES.INCIDENTS, 'incident_updated', updatedIncident);
-            
-            // Activity for diagnosis
-            const diagActivity = await db.activity.create({
-              data: {
-                eventType: 'diagnosis_completed',
-                title: 'AI Diagnosis Ready',
-                description: `AI diagnosed incident #${incident.id.substring(0, 6)}`,
-                incidentId: incident.id,
-              }
+          if (lockAcquired) {
+            const existingIncident = await db.incident.findFirst({
+              where: { workflowRunId: dbRun.id }
             });
-            emitToAll(SOCKET_NAMESPACES.DASHBOARD, 'activity', diagActivity);
 
-            // Trigger Auto-Fix if enabled and auto_fixable
-            if (dbRepo.autoFixEnabled && diagnosis.auto_fixable) {
-              logger.info(`[Webhook] Auto-Fix is enabled for ${dbRepo.fullName}. Enqueuing patch generation job...`);
-              try {
-                const { autoFixQueue } = await import('./queue.service.js');
-              
-                await autoFixQueue.add('generate-patch', {
-                  incidentId: incident.id,
-                  userId: dbRepo.userId,
-                  token: dbRepo.user?.accessToken || process.env.GITHUB_CLIENT_SECRET,
-                  filePath: '.github/workflows/pipeheal-test.yml' // Can be parsed dynamically later
+            if (!existingIncident) {
+              // Create an incident
+              const incidentData = {
+                title: `Pipeline Failed: ${run.name}`,
+                description: `Failed at ${parsedLogData.errorMessage}`,
+                severity: 'HIGH',
+                status: 'DIAGNOSING',
+                errorCategory: parsedLogData.errorType,
+                errorMessage: parsedLogData.errorMessage,
+                repositoryId: dbRepo.id,
+                workflowRunId: dbRun.id,
+              };
+      
+              const incident = await incidentService.createIncident(incidentData, null);
+
+              // Emit new incident
+              emitToAll(SOCKET_NAMESPACES.INCIDENTS, 'incident_created', incident);
+
+              // Async trigger AI
+              aiService.diagnoseFailure(parsedLogData).then(async (diagnosis) => {
+                await db.diagnosis.create({
+                  data: {
+                    rootCause: diagnosis.root_cause,
+                    summary: diagnosis.summary,
+                    failureType: diagnosis.failure_type,
+                    suggestedFix: diagnosis.suggested_fix,
+                    autoFixable: diagnosis.auto_fixable,
+                    confidence: parseFloat(diagnosis.confidence) || 0.8,
+                    aiModel: aiService.getProvider(),
+                    rawResponse: diagnosis,
+                    incidentId: incident.id,
+                  }
                 });
-              
-                logger.info(`[Webhook] Job enqueued successfully for incident ${incident.id}`);
-              } catch (err) {
-                logger.error(`[Webhook] Failed to start auto-fix: ${err.message}`);
-              }
+                
+                await incidentService.updateIncident(incident.id, { status: 'OPEN' }, null);
+                const updatedIncident = await incidentService.getIncident(incident.id);
+                emitToAll(SOCKET_NAMESPACES.INCIDENTS, 'incident_updated', updatedIncident);
+                
+                // Activity for diagnosis
+                const diagActivity = await db.activity.create({
+                  data: {
+                    eventType: 'diagnosis_completed',
+                    title: 'AI Diagnosis Ready',
+                    description: `AI diagnosed incident #${incident.id.substring(0, 6)}`,
+                    incidentId: incident.id,
+                  }
+                });
+                emitToAll(SOCKET_NAMESPACES.DASHBOARD, 'activity', diagActivity);
+
+                // Trigger Auto-Fix if enabled and auto_fixable
+                if (dbRepo.autoFixEnabled && diagnosis.auto_fixable) {
+                  logger.info(`[Webhook] Auto-Fix is enabled for ${dbRepo.fullName}. Enqueuing patch generation job...`);
+                  try {
+                    const { autoFixQueue } = await import('./queue.service.js');
+                  
+                    await autoFixQueue.add('generate-patch', {
+                      incidentId: incident.id,
+                      userId: dbRepo.userId,
+                      token: dbRepo.user?.accessToken || process.env.GITHUB_CLIENT_SECRET,
+                      filePath: '.github/workflows/pipeheal-test.yml' // Can be parsed dynamically later
+                    });
+                  
+                    logger.info(`[Webhook] Job enqueued successfully for incident ${incident.id}`);
+                  } catch (err) {
+                    logger.error(`[Webhook] Failed to start auto-fix: ${err.message}`);
+                  }
+                }
+              }).catch(err => {
+                logger.error(`[Webhook] AI diagnosis failed: ${err.message}`);
+                incidentService.updateIncident(incident.id, { status: 'OPEN' }, null);
+              });
             }
-            
-          }).catch(err => {
-            logger.error(`[Webhook] AI diagnosis failed: ${err.message}`);
-            incidentService.updateIncident(incident.id, { status: 'OPEN' }, null);
-          });
+          } else {
+            logger.info(`[Webhook] Duplicate terminal event for run ${dbRun.id} is already being processed. Skipping.`);
+          }
+        } finally {
+          if (lockAcquired) {
+            await db.$queryRaw`SELECT pg_advisory_unlock(hashtext(${dbRun.id}))`.catch(() => {});
+          }
         }
-        }
+      }
 
       } else {
       // Just update status for requested / in_progress without fetching logs

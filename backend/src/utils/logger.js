@@ -2,6 +2,8 @@ import { createLogger, format, transports } from 'winston';
 import { mkdirSync } from 'fs';
 import { join, dirname } from 'path';
 import { fileURLToPath } from 'url';
+import { EventEmitter } from 'events';
+import Transport from 'winston-transport';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const LOG_DIR = join(__dirname, '../../..', 'logs');
@@ -23,6 +25,21 @@ const consoleFormat = combine(
     return `${timestamp} [${level}] ${stack || message}${metaStr}`;
   })
 );
+
+export const logEmitter = new EventEmitter();
+
+// Custom transport to emit logs via EventEmitter
+class SocketTransport extends Transport {
+  constructor(opts) {
+    super(opts);
+  }
+  log(info, callback) {
+    setImmediate(() => {
+      logEmitter.emit('log', info);
+    });
+    callback();
+  }
+}
 
 // File format — structured JSON
 const fileFormat = combine(
@@ -60,6 +77,14 @@ export const logger = createLogger({
       maxFiles: 5,
       tailable: true,
     }),
+
+    // Custom transport for live streaming to UI — emits plain info object
+    new SocketTransport({
+      format: combine(
+        timestamp({ format: 'HH:mm:ss.SSS' }),
+        errors({ stack: true })
+      )
+    })
   ],
 });
 

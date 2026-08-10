@@ -1,32 +1,37 @@
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { api } from '../services/api/api';
 import { formatDistanceToNow } from 'date-fns';
+import HeartbeatLoader from '../components/HeartbeatLoader';
 import './AutoFixesPage.css';
 
 export default function AutoFixesPage() {
-  const [incidents, setIncidents] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const fetchIncidents = async () => {
-      try {
-        const res = await api.getIncidents({ status: 'RESOLVED', limit: 50 });
-        // Filter those that have an AI patch which is verified
-        const autoFixed = (res.data || []).filter(inc => 
-          inc.patches?.some(p => p.status === 'VERIFIED')
-        );
-        setIncidents(autoFixed);
-      } catch (err) {
-        console.error('Failed to fetch auto-fixes', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchIncidents();
-  }, []);
+  const { data: incidents = [], isLoading: loading } = useQuery({
+    queryKey: ['autofixes'],
+    queryFn: async () => {
+      const res = await api.getIncidents({ status: 'RESOLVED', limit: 50 });
+      // Filter those that have an AI patch which is verified
+      return (res.data || []).filter(inc => 
+        inc.patches?.some(p => p.status === 'VERIFIED')
+      );
+    }
+  });
 
   if (loading) {
-    return <div className="autofix-page"><div className="skeleton" style={{ height: '200px' }} /></div>;
+    return (
+      <div className="autofix-page">
+        <div className="autofix-header">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '30%' }}>
+            <div className="skeleton" style={{ height: '48px', width: '100%' }} />
+            <div className="skeleton" style={{ height: '20px', width: '60%' }} />
+          </div>
+        </div>
+        <div className="autofix-grid">
+          {[1, 2, 3, 4, 5, 6].map(i => (
+            <div key={i} className="skeleton" style={{ height: '180px', borderRadius: '14px' }} />
+          ))}
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -42,7 +47,7 @@ export default function AutoFixesPage() {
 
       {incidents.length === 0 ? (
         <div className="autofix-empty">
-          <span className="material-symbols-outlined">auto_fix</span>
+          <HeartbeatLoader status="flatline" style={{ width: '200px', height: '60px', opacity: 0.2, margin: '0 auto' }} />
           <h3>No auto-fixes yet</h3>
           <p>Enable Auto-Fix on your repositories to let PipeHeal automatically push fixes for broken pipelines.</p>
         </div>

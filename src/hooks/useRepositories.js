@@ -1,119 +1,114 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { api } from '../services/api/api.js';
 import { useSocket } from './useSocket.js';
 
-/**
- * axios interceptor returns response.data directly.
- * So api.getRepositories() resolves to:
- *   { success: true, data: [...], meta: { total, page, ... }, message: '...' }
- */
 export const useRepositories = () => {
-  const [repositories, setRepositories] = useState([]);
-  const [total, setTotal] = useState(0);
-  const [githubRepos, setGithubRepos] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [githubLoading, setGithubLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const queryClient = useQueryClient();
 
-  const fetchRepositories = useCallback(async () => {
-    try {
-      setLoading(true);
+  const { data: repoData, isLoading: loading, error, refetch: refetchRepositories } = useQuery({
+    queryKey: ['repositories'],
+    queryFn: async () => {
       const res = await api.getRepositories();
-      // res = { success, data: [...], meta: { total } }
       const items = Array.isArray(res?.data) ? res.data : [];
-      setRepositories(items);
-      setTotal(res?.meta?.total ?? items.length);
-      setError(null);
-    } catch (err) {
-      setError(err.message || 'Failed to fetch repositories');
-    } finally {
-      setLoading(false);
+      return { repositories: items, total: res?.meta?.total ?? items.length };
     }
-  }, []);
+  });
 
-  const fetchGithubRepos = useCallback(async () => {
-    try {
-      setGithubLoading(true);
+  const { data: githubReposData, isLoading: githubLoading, refetch: fetchGithubRepos } = useQuery({
+    queryKey: ['githubRepos'],
+    queryFn: async () => {
       const res = await api.getGithubRepos();
-      // res = { success, data: [...] }
-      const items = Array.isArray(res?.data) ? res.data : [];
-      setGithubRepos(items);
-    } catch (err) {
-      console.error('Failed to fetch GitHub repos:', err);
-      setGithubRepos([]);
-    } finally {
-      setGithubLoading(false);
-    }
-  }, []);
+      return Array.isArray(res?.data) ? res.data : [];
+    },
+    enabled: false
+  });
 
-  const addRepository = useCallback(async (fullName) => {
-    const res = await api.addRepository(fullName);
-    await fetchRepositories();
-    return res?.data;
-  }, [fetchRepositories]);
+  const addRepositoryMutation = useMutation({
+    mutationFn: (fullName) => api.addRepository(fullName),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['repositories'] })
+  });
 
-  const removeRepository = useCallback(async (id) => {
-    await api.removeRepository(id);
-    setRepositories(prev => prev.filter(r => r.id !== id));
-    setTotal(prev => Math.max(0, prev - 1));
-  }, []);
+  const removeRepositoryMutation = useMutation({
+    mutationFn: (id) => api.removeRepository(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['repositories'] })
+  });
 
-  const syncRepository = useCallback(async (id) => {
-    const res = await api.syncRepository(id);
-    const updated = res?.data;
-    if (updated) {
-      setRepositories(prev => prev.map(r => r.id === id ? { ...r, ...updated } : r));
-    }
-    return updated;
-  }, []);
+  const syncRepositoryMutation = useMutation({
+    mutationFn: (id) => api.syncRepository(id),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['repositories'] })
+  });
 
-  const toggleAutoFix = useCallback(async (id, enabled) => {
-    const res = await api.toggleAutoFix(id, enabled);
-    const updated = res?.data;
-    if (updated) {
-      setRepositories(prev => prev.map(r => r.id === id ? { ...r, ...updated } : r));
-    }
-    return updated;
-  }, []);
+  const toggleAutoFixMutation = useMutation({
+    mutationFn: ({ id, enabled }) => api.toggleAutoFix(id, enabled),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['repositories'] })
+  });
 
-  useEffect(() => {
-    fetchRepositories();
-  }, [fetchRepositories]);
-
-  // Real-time Socket.IO updates
   useSocket('/dashboard', {
     repository_connected: (repo) => {
-      setRepositories(prev => {
-        if (prev.find(r => r.id === repo.id)) return prev;
-        return [repo, ...prev];
+      queryClient.setQueryData(['repositories'], (oldData) => {
+        if (!oldData) return oldData;
+        if (oldData.repositories.find(r => r.id === repo.id)) return oldData;
+        return {
+          ...oldData,
+          repositories: [repo, ...oldData.repositories],
+          total: oldData.total + 1
+        };
       });
-      setTotal(prev => prev + 1);
     },
     repository_removed: ({ id }) => {
-      setRepositories(prev => prev.filter(r => r.id !== id));
-      setTotal(prev => Math.max(0, prev - 1));
+      queryClient.setQueryData(['repositories'], (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          repositories: oldData.repositories.filter(r => r.id !== id),
+          total: Math.max(0, oldData.total - 1)
+        };
+      });
     },
     repository_synced: (updated) => {
-      setRepositories(prev => prev.map(r => r.id === updated.id ? { ...r, ...updated } : r));
+      queryClient.setQueryData(['repositories'], (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          repositories: oldData.repositories.map(r => r.id === updated.id ? { ...r, ...updated } : r)
+        };
+      });
     },
     repository_autofix_toggled: (updated) => {
-      setRepositories(prev => prev.map(r => r.id === updated.id ? { ...r, ...updated } : r));
+      queryClient.setQueryData(['repositories'], (oldData) => {
+        if (!oldData) return oldData;
+        return {
+          ...oldData,
+          repositories: oldData.repositories.map(r => r.id === updated.id ? { ...r, ...updated } : r)
+        };
+      });
     },
   });
 
   return {
-    repositories,
-    total,
+    repositories: repoData?.repositories || [],
+    total: repoData?.total || 0,
     loading,
-    error,
-    githubRepos,
+    error: error?.message || null,
+    githubRepos: githubReposData || [],
     githubLoading,
-    refetch: fetchRepositories,
+    refetch: refetchRepositories,
     fetchGithubRepos,
-    addRepository,
-    removeRepository,
-    syncRepository,
-    toggleAutoFix,
+    addRepository: async (fullName) => {
+      const res = await addRepositoryMutation.mutateAsync(fullName);
+      return res?.data;
+    },
+    removeRepository: async (id) => {
+      await removeRepositoryMutation.mutateAsync(id);
+    },
+    syncRepository: async (id) => {
+      const res = await syncRepositoryMutation.mutateAsync(id);
+      return res?.data;
+    },
+    toggleAutoFix: async (id, enabled) => {
+      const res = await toggleAutoFixMutation.mutateAsync({ id, enabled });
+      return res?.data;
+    },
   };
 };
 
