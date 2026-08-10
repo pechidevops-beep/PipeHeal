@@ -286,8 +286,12 @@ export const githubService = {
       });
       return res.data;
     } catch (err) {
+      if (err.response?.status === 422) {
+        logger.warn(`[GitHub API] Branch ${newBranchName} already exists on ${owner}/${repo}`);
+        return { ref: `refs/heads/${newBranchName}` };
+      }
       logger.error(`[GitHub API] createBranch failed: ${err.message}`);
-      throw new ApiError(500, 'Failed to create branch', ERROR_CODES.GITHUB_API_ERROR);
+      throw new ApiError(500, 'Failed to create branch: ' + err.message, ERROR_CODES.GITHUB_API_ERROR);
     }
   },
 

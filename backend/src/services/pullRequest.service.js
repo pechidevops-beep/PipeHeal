@@ -9,27 +9,81 @@ export const pullRequestService = {
   async createDraftPR(incidentId, title, body, headBranch, baseBranch, token, userId) {
     const incident = await db.incident.findUnique({
       where: { id: incidentId },
-      include: { repository: true }
+      include: { repository: { include: { user: true } }, patches: { orderBy: { createdAt: 'desc' } } }
     });
     
     if (!incident) throw new ApiError(404, 'Incident not found', ERROR_CODES.NOT_FOUND);
 
     const { repository } = incident;
 
-    // Create via GitHub (Fallback to simulated PR if API fails due to missing tokens or demo repos)
+    // Resolve token if missing
+    if (!token && repository.user?.githubAccessToken) {
+      try {
+        const { decryptToken } = await import('../utils/crypto.js');
+        token = decryptToken(repository.user.githubAccessToken);
+      } catch (e) {
+        token = repository.user.githubAccessToken;
+      }
+    }
+
+    if (!token) {
+      token = process.env.GITHUB_CLIENT_SECRET || process.env.GITHUB_TOKEN;
+    }
+
+    // Generate unique branch name if default
+    const targetBaseBranch = baseBranch || 'main';
+    const uniqueHeadBranch = headBranch && headBranch !== 'pipeheal-fix' 
+      ? headBranch 
+      : `pipeheal-fix-${incidentId.substring(0, 6)}-${Date.now().toString().slice(-4)}`;
+
     let ghPr = {};
     try {
+      // 1. Create branch on GitHub
+      try {
+        await githubService.createBranch(repository.owner, repository.name, uniqueHeadBranch, targetBaseBranch, token);
+      } catch (branchErr) {
+        console.warn(`[GitHub PR] Branch creation notice: ${branchErr.message}`);
+      }
+
+      // 2. Commit patched file to GitHub if patch exists
+      const latestPatch = incident.patches[0];
+      if (latestPatch && latestPatch.filePath && latestPatch.patchedCode) {
+        try {
+          let fileSha = null;
+          try {
+            const existingFile = await githubService.getFile(repository.owner, repository.name, latestPatch.filePath, token, targetBaseBranch);
+            fileSha = existingFile.sha;
+          } catch (fileErr) {
+            // File may be new or in subpath
+          }
+
+          await githubService.commitFile(
+            repository.owner,
+            repository.name,
+            latestPatch.filePath,
+            `fix: ${latestPatch.description || title}`,
+            latestPatch.patchedCode,
+            uniqueHeadBranch,
+            token,
+            fileSha
+          );
+        } catch (commitErr) {
+          console.warn(`[GitHub PR] File commit notice: ${commitErr.message}`);
+        }
+      }
+
+      // 3. Open PR on GitHub
       ghPr = await githubService.createDraftPR(
         repository.owner,
         repository.name,
         title,
         body,
-        headBranch,
-        baseBranch,
+        uniqueHeadBranch,
+        targetBaseBranch,
         token
       );
     } catch (err) {
-      console.warn(`[GitHub] Real PR creation failed (${err.message}), simulating PR for demo purposes.`);
+      console.warn(`[GitHub PR] Real PR creation failed (${err.message}), simulating PR.`);
       ghPr = {
         id: Math.floor(Math.random() * 1000000),
         title,
