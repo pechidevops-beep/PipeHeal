@@ -83,11 +83,18 @@ export const AuthProvider = ({ children }) => {
         const githubConnected = params.get('github') === 'connected';
         
         if (urlToken) {
-          // If we received a token from GitHub redirect, save it and strip URL
+          // If we received a token from GitHub redirect, save it
           updateToken(urlToken);
-          window.history.replaceState({}, document.title, window.location.pathname);
-          // Fetch user profile using the token
-          const res = await apiClient.get('/auth/me');
+          
+          // DO NOT strip the URL if we are on the callback page, because AuthCallbackPage needs to read it!
+          if (!window.location.pathname.includes('/auth/callback')) {
+            window.history.replaceState({}, document.title, window.location.pathname);
+          }
+
+          // Fetch user profile using the token (bypass interceptor state delay by attaching directly)
+          const res = await apiClient.get('/auth/me', {
+            headers: { Authorization: `Bearer ${urlToken}` }
+          });
           if (res.success) setUser(res.data.user);
         } else {
           // Otherwise do silent refresh to restore session
