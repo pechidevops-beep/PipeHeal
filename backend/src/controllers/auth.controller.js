@@ -7,8 +7,8 @@ import ERROR_CODES from '../constants/errorCodes.js';
 
 const COOKIE_OPTIONS = {
   httpOnly: true,
-  secure: env.isProduction,
-  sameSite: 'strict',
+  secure: true, // MUST be true for sameSite: 'none'
+  sameSite: 'none', // MUST be 'none' for cross-domain cookies (Vercel -> Render)
   maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
 };
 
