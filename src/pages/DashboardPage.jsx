@@ -49,8 +49,8 @@ export default function DashboardPage() {
   const dynamicCards = [
     {
       title: 'Healthy Pipelines',
-      value: stats?.stats?.healthyPipelines?.toString() || '0',
-      suffix: `/ ${stats?.stats?.totalPipelines || 0}`,
+      value: stats?.healthyPipelines?.toString() || '0',
+      suffix: `/ ${stats?.totalPipelines || 0}`,
       badge: 'Active projects',
       badgeClass: 'badge--green',
       icon: 'check_circle',
@@ -59,7 +59,7 @@ export default function DashboardPage() {
     },
     {
       title: 'Needs Attention',
-      value: stats?.stats?.openIncidents?.toString() || '0',
+      value: stats?.openIncidents?.toString() || '0',
       suffix: '',
       badge: 'Unresolved incidents',
       badgeClass: 'badge--amber',
@@ -69,7 +69,7 @@ export default function DashboardPage() {
     },
     {
       title: 'Auto Fixed Today',
-      value: stats?.stats?.autoFixedToday?.toString() || '0',
+      value: stats?.autoFixedToday?.toString() || '0',
       suffix: '',
       badge: 'Resolved automatically',
       badgeClass: 'badge--green',
@@ -79,7 +79,7 @@ export default function DashboardPage() {
     },
     {
       title: 'Success Rate',
-      value: `${stats?.stats?.successRate || 0}%`,
+      value: `${stats?.successRate || 0}%`,
       suffix: '',
       badge: 'Last 30 days',
       badgeClass: 'badge--neutral',
@@ -122,7 +122,7 @@ export default function DashboardPage() {
           <h2 className="hero-headline">
             AI Monitoring{' '}
             <span className="hero-headline-highlight">
-              <NumberCounter value={stats?.stats?.totalPipelines || 0} /> Active Pipelines
+              <NumberCounter value={stats?.totalPipelines || 0} /> Active Pipelines
             </span>
           </h2>
           <p className="hero-description">

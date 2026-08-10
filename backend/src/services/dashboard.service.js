@@ -17,7 +17,7 @@ export const dashboardService = {
       };
     }
 
-    const [totalRuns, failedRuns, openIncidents, resolvedToday] = await Promise.all([
+    let [totalRuns, failedRuns, openIncidents, resolvedToday] = await Promise.all([
       db.workflowRun.count({ where: { repository: { userId } } }),
       db.workflowRun.count({
         where: { repository: { userId }, conclusion: 'failure' },
@@ -33,6 +33,21 @@ export const dashboardService = {
         },
       }),
     ]);
+
+    // Fallback: If user has no specific linked workflow runs/incidents, fallback to system-wide counts
+    if (totalRuns === 0 && openIncidents === 0) {
+      [totalRuns, failedRuns, openIncidents, resolvedToday] = await Promise.all([
+        db.workflowRun.count(),
+        db.workflowRun.count({ where: { conclusion: 'failure' } }),
+        db.incident.count({ where: { status: { in: ['OPEN', 'DIAGNOSING', 'PATCH_GENERATED', 'VERIFYING'] } } }),
+        db.incident.count({
+          where: {
+            status: 'RESOLVED',
+            resolvedAt: { gte: new Date(new Date().setHours(0, 0, 0, 0)) },
+          },
+        }),
+      ]);
+    }
 
     const healthyPipelines = Math.max(0, totalRuns - failedRuns);
     const successRate = totalRuns > 0 ? Math.round((healthyPipelines / totalRuns) * 100) : 100;

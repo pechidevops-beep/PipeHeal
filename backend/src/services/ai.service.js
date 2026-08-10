@@ -66,7 +66,8 @@ You MUST return ONLY a raw JSON object with the following schema, and absolutely
 
   async callGemini(prompt, systemPrompt) {
     if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${env.GEMINI_API_KEY}`;
+    const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
+    const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
     
     const body = {
       system_instruction: { parts: [{ text: systemPrompt || this.getSystemPrompt() }] },
@@ -176,7 +177,7 @@ ${originalCode}`;
       return {
         patchedCode: originalCode,
         diff: '',
-        description: 'Failed to generate patch automatically.'
+        description: `Automatic patch generation unavailable (${err.message}). Please follow the manual resolution steps in the Suggested Fix section above.`
       };
     }
   }
