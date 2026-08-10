@@ -29,7 +29,7 @@ export const api = {
 
   // ── Sandbox ───────────────────────────────────────────────────────────────
   getSandboxRuns: (page = 1, limit = 20) => apiClient.get(`/sandbox?page=${page}&limit=${limit}`),
-  runSandbox: (incidentId, patchId) => apiClient.post('/sandbox', { incidentId, patchId }),
+  runSandbox: (incidentId, patchId) => apiClient.post('/sandbox', patchId ? { incidentId, patchId } : { incidentId }),
 
   // ── Pull Requests ─────────────────────────────────────────────────────────
   createPullRequest: (incidentId, title, body, headBranch, baseBranch) =>
