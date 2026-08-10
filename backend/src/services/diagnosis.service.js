@@ -12,7 +12,7 @@ export const diagnosisService = {
     // 1. Fetch workflow run with raw logs
     const run = await db.workflowRun.findUnique({
       where: { id: workflowRunId },
-      include: { incidents: { include: { repository: true, user: true } } }
+      include: { incidents: { include: { repository: { include: { user: true } } } } }
     });
     if (!run) throw new ApiError(404, 'Workflow Run not found', ERROR_CODES.NOT_FOUND);
 
@@ -24,7 +24,11 @@ export const diagnosisService = {
     if (!run.rawLogs || run.rawLogs.trim() === '') {
       try {
         const repo = incident.repository;
-        const token = incident.user?.accessToken || process.env.GITHUB_CLIENT_SECRET;
+        let token = process.env.GITHUB_CLIENT_SECRET;
+        if (repo.user?.githubAccessToken) {
+          const { decryptToken } = await import('../utils/crypto.js');
+          token = decryptToken(repo.user.githubAccessToken);
+        }
         const githubService = (await import('./github.service.js')).default;
         
         run.rawLogs = await githubService.downloadWorkflowLogs(repo.owner, repo.name, run.githubRunId.toString(), token);
@@ -119,13 +123,36 @@ export const diagnosisService = {
   },
 
   async generateFix(incidentId, diagnosisId, filePath, originalCode, userId) {
-    const incident = await db.incident.findUnique({ where: { id: incidentId } });
+    const incident = await db.incident.findUnique({ 
+      where: { id: incidentId },
+      include: { repository: { include: { user: true } } }
+    });
     if (!incident) throw new ApiError(404, 'Incident not found', ERROR_CODES.NOT_FOUND);
 
     let diagnosisText = 'Unknown failure';
     if (diagnosisId) {
       const dbDiag = await db.diagnosis.findUnique({ where: { id: diagnosisId } });
       if (dbDiag) diagnosisText = dbDiag.suggestedFix || dbDiag.rootCause;
+    }
+
+    // Auto-fetch file from GitHub if not provided by frontend
+    if (!filePath) filePath = incident.errorFile || '.github/workflows/pipeheal-test.yml';
+    
+    if (!originalCode || originalCode.trim() === '') {
+      try {
+        const repo = incident.repository;
+        let token = process.env.GITHUB_CLIENT_SECRET;
+        if (repo.user?.githubAccessToken) {
+          const { decryptToken } = await import('../utils/crypto.js');
+          token = decryptToken(repo.user.githubAccessToken);
+        }
+        const githubService = (await import('./github.service.js')).default;
+        const fileRes = await githubService.getFile(repo.owner, repo.name, filePath, token);
+        originalCode = fileRes.content;
+      } catch (err) {
+        logger.warn(`[DiagnosisService] Could not fetch original code for ${filePath}: ${err.message}`);
+        originalCode = '// File not found or empty';
+      }
     }
 
     const aiResult = await aiService.generatePatch(diagnosisText, filePath, originalCode);
