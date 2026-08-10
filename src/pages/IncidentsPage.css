@@ -131,6 +131,14 @@
   font-size: 14px;
 }
 
+.inc-detail-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
 /* ── Detail header ───────────────────────────────── */
 .inc-detail-header {
   padding: 16px 20px;
