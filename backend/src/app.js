@@ -14,18 +14,28 @@ const app = express();
 
 // ── Security & Utility Middleware ────────────────────────────────────────────
 app.use(helmet()); // Set security HTTP headers
-app.use(cors({
+// Production origins — always allowed regardless of env config
+const PRODUCTION_ORIGINS = [
+  'https://pipe-heal.vercel.app',
+  'https://pipeheal.onrender.com',
+];
+
+const corsOptions = {
   origin: (origin, callback) => {
     // Allow requests with no origin (curl, Postman, server-to-server)
     if (!origin) return callback(null, true);
-    const allowed = env.ALLOWED_ORIGINS;
+    const allowed = [...PRODUCTION_ORIGINS, ...env.ALLOWED_ORIGINS];
     if (allowed.includes(origin) || env.isDevelopment) {
       return callback(null, true);
     }
     return callback(new Error(`CORS: origin ${origin} not allowed`), false);
   },
   credentials: true,
-}));
+  optionsSuccessStatus: 200,
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // Preflight for all routes
 app.use(compression()); // Compress response bodies
 
 // ── Webhooks (Need raw body) ────────────────────────────────────────────────

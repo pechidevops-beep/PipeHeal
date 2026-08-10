@@ -64,21 +64,51 @@ You MUST return ONLY a raw JSON object with the following schema, and absolutely
     }
   },
 
-  async callGemini(prompt, systemPrompt) {
+  async callGemini(prompt, systemPrompt, retries = 3) {
     if (!env.GEMINI_API_KEY) throw new Error('GEMINI_API_KEY not configured');
     const model = process.env.GEMINI_MODEL || 'gemini-3.6-flash';
     const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${env.GEMINI_API_KEY}`;
-    
+
     const body = {
       system_instruction: { parts: [{ text: systemPrompt || this.getSystemPrompt() }] },
       contents: [{ parts: [{ text: prompt }] }]
     };
 
-    const res = await axios.post(url, body, { headers: { 'Content-Type': 'application/json' } });
-    
-    const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
-    if (!text) throw new Error('Invalid Gemini response');
-    return text;
+    for (let attempt = 1; attempt <= retries; attempt++) {
+      try {
+        logger.info(`[AI Service] Gemini call attempt ${attempt}/${retries} using model: ${model}`);
+        const res = await axios.post(url, body, { headers: { 'Content-Type': 'application/json' } });
+        const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (!text) throw new Error('Invalid Gemini response: no text returned');
+        logger.info(`[AI Service] Gemini call succeeded on attempt ${attempt}`);
+        return text;
+      } catch (err) {
+        const status = err.response?.status;
+        const isRateLimit = status === 429;
+        const isTransient = status >= 500 || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT';
+
+        logger.warn(`[AI Service] Gemini attempt ${attempt} failed — HTTP ${status || 'N/A'}: ${err.message}`);
+
+        if (isRateLimit) {
+          if (attempt < retries) {
+            const waitMs = attempt * 5000; // 5s, 10s, 15s backoff
+            logger.warn(`[AI Service] Gemini rate limited (429). Waiting ${waitMs}ms before retry...`);
+            await new Promise(r => setTimeout(r, waitMs));
+            continue;
+          }
+          throw new Error('AI is temporarily rate limited. Please try again in a minute.');
+        }
+
+        if (isTransient && attempt < retries) {
+          const waitMs = attempt * 2000;
+          logger.warn(`[AI Service] Gemini transient error. Waiting ${waitMs}ms before retry...`);
+          await new Promise(r => setTimeout(r, waitMs));
+          continue;
+        }
+
+        throw err;
+      }
+    }
   },
 
   async callClaude(prompt, systemPrompt) {
