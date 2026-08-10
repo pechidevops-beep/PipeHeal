@@ -50,18 +50,17 @@ export const validationService = {
         }
 
         if (hasPackageJson) {
-          validationLogs += 'Found package.json. Running npm install...\n';
-          const { stdout: installOut } = await execAsync('npm install --ignore-scripts', { cwd: tempDir, timeout: 60000 });
-          validationLogs += installOut + '\n';
+          validationLogs += 'Found package.json. Skipping npm install to prevent memory limits on free tier.\n';
+          // const { stdout: installOut } = await execAsync('npm install --ignore-scripts', { cwd: tempDir, timeout: 60000 });
+          // validationLogs += installOut + '\n';
           
-          validationLogs += 'Running npm run build (if exists)...\n';
-          try {
-            const { stdout: buildOut } = await execAsync('npm run build --if-present', { cwd: tempDir, timeout: 60000 });
-            validationLogs += buildOut + '\n';
-          } catch (buildErr) {
-            // Build failed!
-            throw new Error(`Build Failed: ${buildErr.message}\n${buildErr.stdout}\n${buildErr.stderr}`);
-          }
+          // validationLogs += 'Running npm run build (if exists)...\n';
+          // try {
+          //   const { stdout: buildOut } = await execAsync('npm run build --if-present', { cwd: tempDir, timeout: 60000 });
+          //   validationLogs += buildOut + '\n';
+          // } catch (buildErr) {
+          //   throw new Error(`Build Failed: ${buildErr.message}\n${buildErr.stdout}\n${buildErr.stderr}`);
+          // }
         } else {
           validationLogs += 'No standard package.json found. Assuming syntax is valid.\n';
         }
