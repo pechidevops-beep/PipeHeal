@@ -84,7 +84,15 @@ export const webhookService = {
     const isTerminal = payload.action === 'completed' || run.status === 'completed';
 
     if (isTerminal) {
-      const token = dbRepo.user?.accessToken || process.env.GITHUB_CLIENT_SECRET;
+      let token = process.env.GITHUB_CLIENT_SECRET; // Fallback
+      if (dbRepo.user?.githubAccessToken) {
+        try {
+          const { decryptToken } = await import('../utils/crypto.js');
+          token = decryptToken(dbRepo.user.githubAccessToken);
+        } catch (e) {
+          logger.warn(`[Webhook] Failed to decrypt user token for log download: ${e.message}`);
+        }
+      }
       
       try {
         const jobsRes = await githubService.getJobs(dbRepo.owner, dbRepo.name, run.id, token);
