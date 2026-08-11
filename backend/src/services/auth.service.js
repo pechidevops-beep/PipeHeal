@@ -15,15 +15,28 @@ export const authService = {
   async registerWithEmail(email, password, firstName, lastName) {
     const hashedPassword = await bcrypt.hash(password, 12);
     
-    // DB layer catches P2002 and throws 409 ApiError
-    const user = await userRepository.create({
-      email,
-      password: hashedPassword,
-      firstName,
-      lastName,
-      tokenVersion: 0,
-      emailVerified: false,
-    });
+    let user = await userRepository.findByEmail(email);
+    if (user) {
+      if (!user.password) {
+        // User was created via GitHub and has no password, so let them set one
+        user = await userRepository.update(user.id, {
+          password: hashedPassword,
+          firstName: user.firstName || firstName,
+          lastName: user.lastName || lastName,
+        });
+      } else {
+        throw new ApiError(409, 'A user with this email already exists.', 'P2002');
+      }
+    } else {
+      user = await userRepository.create({
+        email,
+        password: hashedPassword,
+        firstName,
+        lastName,
+        tokenVersion: 0,
+        emailVerified: false,
+      });
+    }
     
     const payload = { userId: user.id, role: user.role, tokenVersion: user.tokenVersion };
     return {
@@ -41,9 +54,12 @@ export const authService = {
   async loginWithEmail(email, password) {
     const user = await userRepository.findByEmail(email);
     
-    if (!user || !user.password) {
-      // Throw generic error even if email doesn't exist or is github-only
+    if (!user) {
       throw new ApiError(401, 'Invalid email or password', ERROR_CODES.UNAUTHORIZED);
+    }
+
+    if (!user.password) {
+      throw new ApiError(401, 'This account is linked to GitHub. Please sign in with GitHub.', ERROR_CODES.UNAUTHORIZED);
     }
     
     const isValid = await bcrypt.compare(password, user.password);
@@ -145,16 +161,44 @@ export const authService = {
   async loginWithGitHub(code) {
     const githubToken = await this.exchangeGitHubCode(code);
     const profile = await this.fetchGitHubProfile(githubToken);
+    
+    const email = profile.email || `${profile.login}@github.local`; // Fallback if email is private
+    const githubId = profile.id.toString();
 
-    const user = await userRepository.upsert(profile.id.toString(), {
-      login: profile.login,
-      firstName: profile.name?.split(' ')[0] || null,
-      lastName: profile.name?.split(' ').slice(1).join(' ') || null,
-      email: profile.email || `${profile.login}@github.local`, // Fallback if email is private
-      avatarUrl: profile.avatar_url,
-      githubAccessToken: encryptToken(githubToken),
-      emailVerified: true, // Assuming github verifies emails
-    });
+    let user = await userRepository.findByGithubId(githubId);
+    
+    if (!user) {
+      // Check if a user with this email already exists
+      const existingEmailUser = await userRepository.findByEmail(email);
+      if (existingEmailUser) {
+        // Link github to this existing email account
+        user = await userRepository.update(existingEmailUser.id, {
+          githubId,
+          login: profile.login,
+          avatarUrl: profile.avatar_url,
+          githubAccessToken: encryptToken(githubToken),
+        });
+      } else {
+        // Create new user
+        user = await userRepository.create({
+          githubId,
+          email,
+          login: profile.login,
+          firstName: profile.name?.split(' ')[0] || null,
+          lastName: profile.name?.split(' ').slice(1).join(' ') || null,
+          avatarUrl: profile.avatar_url,
+          githubAccessToken: encryptToken(githubToken),
+          emailVerified: true,
+        });
+      }
+    } else {
+      // Update github token and info for existing github user
+      user = await userRepository.update(user.id, {
+        login: profile.login,
+        avatarUrl: profile.avatar_url,
+        githubAccessToken: encryptToken(githubToken),
+      });
+    }
 
     const payload = { userId: user.id, githubId: user.githubId, role: user.role, tokenVersion: user.tokenVersion };
     
@@ -179,7 +223,24 @@ export const authService = {
     // Check if this GitHub account belongs to someone else
     const existing = await userRepository.findByGithubId(githubId);
     if (existing && existing.id !== userId) {
-      throw new ApiError(409, 'This GitHub account is already linked to another user', ERROR_CODES.CONFLICT);
+      // The user connected a GitHub account that is already tied to another user account.
+      // We will switch their session to the existing account instead of throwing an error.
+      const user = await userRepository.update(existing.id, {
+        login: profile.login,
+        avatarUrl: profile.avatar_url,
+        githubAccessToken: encryptToken(githubToken),
+      });
+
+      const payload = { userId: user.id, githubId: user.githubId, role: user.role, tokenVersion: user.tokenVersion };
+      
+      return {
+        switchedUser: true,
+        user: this._sanitizeUser(user),
+        tokens: {
+          accessToken: signAccessToken(payload),
+          refreshToken: signRefreshToken(payload),
+        }
+      };
     }
     
     const user = await userRepository.update(userId, {
@@ -189,7 +250,10 @@ export const authService = {
       githubAccessToken: encryptToken(githubToken),
     });
     
-    return this._sanitizeUser(user);
+    return {
+      switchedUser: false,
+      user: this._sanitizeUser(user)
+    };
   },
 
   _sanitizeUser(user) {

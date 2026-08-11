@@ -81,8 +81,14 @@ export const authController = {
       if (state && state.startsWith('connect:')) {
         // connecting to an existing session
         const userId = state.split(':')[1];
-        await authService.connectGitHubToAccount(userId, code);
-        return res.redirect(`${env.FRONTEND_URL}/dashboard?github=connected`);
+        const result = await authService.connectGitHubToAccount(userId, code);
+        
+        if (result.switchedUser) {
+          res.cookie('pipeheal_refresh', result.tokens.refreshToken, COOKIE_OPTIONS);
+          return res.redirect(`${env.FRONTEND_URL}/auth/callback?token=${encodeURIComponent(result.tokens.accessToken)}&refresh=${encodeURIComponent(result.tokens.refreshToken)}&login=${encodeURIComponent(result.user.login)}`);
+        } else {
+          return res.redirect(`${env.FRONTEND_URL}/dashboard?github=connected`);
+        }
       } else {
         // pure github login
         const result = await authService.loginWithGitHub(code);
