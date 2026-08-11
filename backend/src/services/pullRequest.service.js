@@ -1,4 +1,5 @@
 import githubService from './github.service.js';
+import knowledgeBaseService from './knowledgeBase.service.js';
 import { db } from '../config/prisma.js';
 import { emitToAll } from '../socket/handlers.js';
 import { SOCKET_NAMESPACES } from '../constants/events.js';
@@ -9,7 +10,7 @@ export const pullRequestService = {
   async createDraftPR(incidentId, title, body, headBranch, baseBranch, token, userId) {
     const incident = await db.incident.findUnique({
       where: { id: incidentId },
-      include: { repository: { include: { user: true } }, patches: { orderBy: { createdAt: 'desc' } } }
+      include: { repository: { include: { user: true } }, patches: { orderBy: { createdAt: 'desc' } }, diagnoses: { orderBy: { createdAt: 'desc' } } }
     });
     
     if (!incident) throw new ApiError(404, 'Incident not found', ERROR_CODES.NOT_FOUND);
@@ -108,6 +109,19 @@ export const pullRequestService = {
     });
 
     await db.incident.update({ where: { id: incidentId }, data: { status: 'RESOLVED' } });
+
+    // RAG: Add this successful patch to the Knowledge Base!
+    const latestDiag = incident.diagnoses?.[0];
+    const latestPatch = incident.patches?.[0];
+    if (latestDiag && latestPatch) {
+      const diagnosisText = latestDiag.rootCause || latestDiag.suggestedFix || latestDiag.summary || 'Unknown failure';
+      await knowledgeBaseService.addEntry(
+        incident.repositoryId,
+        diagnosisText,
+        latestPatch.description || title,
+        latestPatch.diff
+      );
+    }
 
     const activity = await db.activity.create({
       data: {

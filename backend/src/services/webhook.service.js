@@ -261,7 +261,7 @@ export const webhookService = {
                     await autoFixQueue.add('generate-patch', {
                       incidentId: incident.id,
                       userId: dbRepo.userId,
-                      token: dbRepo.user?.accessToken || process.env.GITHUB_CLIENT_SECRET,
+                      token: token,
                       filePath: '.github/workflows/pipeheal-test.yml' // Can be parsed dynamically later
                     });
                   
